@@ -453,17 +453,19 @@ export default function App() {
       }
     }
 
-    // Now fill up to exactly 10 points total with incorrect coordinates
+    // Now fill up up to a random count of 12 to 15 points total with incorrect coordinates
+    const targetPointsCount = Math.floor(Math.random() * 4) + 12; // Generates 12, 13, 14, or 15
+
     // 1st pass: incorrect points with standard distance check (1.5)
     for (const coord of shuffledIncorrect) {
-      if (pointsList.length >= 10) break;
+      if (pointsList.length >= targetPointsCount) break;
       addPoint(coord.x, coord.y, false, true);
     }
 
     // 2nd pass: incorrect points with slightly smaller distance check (1.05)
-    if (pointsList.length < 10) {
+    if (pointsList.length < targetPointsCount) {
       for (const coord of shuffledIncorrect) {
-        if (pointsList.length >= 10) break;
+        if (pointsList.length >= targetPointsCount) break;
         const key = `${coord.x},${coord.y}`;
         if (coordsSet.has(key)) continue;
 
@@ -480,15 +482,15 @@ export default function App() {
     }
 
     // 3rd pass: absolute fallback incorrect points with no distance check
-    if (pointsList.length < 10) {
+    if (pointsList.length < targetPointsCount) {
       for (const coord of shuffledIncorrect) {
-        if (pointsList.length >= 10) break;
+        if (pointsList.length >= targetPointsCount) break;
         addPoint(coord.x, coord.y, false, false);
       }
     }
 
-    // Shuffle the final exact 10 points list
-    const shuffledPoints = pointsList.slice(0, 10).sort(() => Math.random() - 0.5);
+    // Shuffle the final exact points list
+    const shuffledPoints = pointsList.slice(0, targetPointsCount).sort(() => Math.random() - 0.5);
     setConditionPoints(shuffledPoints);
   };
 
@@ -919,7 +921,6 @@ export default function App() {
               <h2 className="text-3xl font-black text-slate-900 font-jua flex justify-center items-center gap-1.5 pt-2">
                 <span>게임 모드 선택</span>
               </h2>
-              <span className="text-sm text-slate-500 font-medium font-sans">원하는 스타일의 수학 소탕 도전을 선택해보세요!</span>
             </div>
 
             {/* Two big independent panels aligned side-to-side */}
