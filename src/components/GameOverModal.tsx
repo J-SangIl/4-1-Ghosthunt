@@ -81,7 +81,7 @@ export default function GameOverModal({
               {review.title}
             </h2>
             <p className="text-teal-100 text-xs font-mono font-bold mt-1">
-              GAME OVER - {currentMode === 'easy' ? '쉬운 모드 (연습)' : '일반 모드 (서바이벌)'}
+              GAME OVER - {currentMode === 'easy' ? '연습 모드' : '일반 모드 (서바이벌)'}
             </p>
           </div>
 

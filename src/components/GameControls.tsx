@@ -86,7 +86,7 @@ export default function GameControls({
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <span>🌱 쉬운 모드 (연습)</span>
+              <span>🌱 연습 모드</span>
             </button>
             <button
               type="button"
@@ -120,7 +120,7 @@ export default function GameControls({
               className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-jua text-sm cursor-pointer shadow-md flex items-center justify-center gap-1.5 transition-all"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>리셋하기</span>
+              <span>처음으로</span>
             </button>
           )}
         </div>

@@ -80,7 +80,7 @@ export default function App() {
   // Helper coordinate generator (Difficulty scales according to current points)
   // Exclude -10 and 10 and 0 since absolute value limit is 9.5 to avoid clipping boundaries.
   const getRandomCoordinateValue = (currentScore: number): number => {
-    if (currentScore <= 10) {
+    if (currentScore <= 5) {
       // Spawn only on integer coordinates from -9 to 9 (exclude -10, 10, and 0)
       let value = 0;
       while (value === 0) {
@@ -88,7 +88,7 @@ export default function App() {
       }
       return value;
     } else {
-      // 11 points or above: decimal coordinates allowed from -9.5 to 9.5 (exclude -10, 10, and 0)
+      // 6 points or above: decimal coordinates allowed from -9.5 to 9.5 (exclude -10, 10, and 0)
       let value = 0;
       while (value === 0) {
         const stepIndex = Math.floor(Math.random() * 39) - 19; // -19 to 19
@@ -368,7 +368,7 @@ export default function App() {
             <span className="text-4xl animate-bounce">👻</span>
             <div className="flex flex-col">
               <h1 className="text-xl sm:text-2xl font-black font-jua text-teal-950 flex items-center gap-1.5 min-w-max">
-                좌표평면 유령 소탕 작전
+                좌표평면 유령 잡기
               </h1>
             </div>
           </div>
@@ -394,7 +394,7 @@ export default function App() {
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
-                <span>🌱 쉬운 연습 모드</span>
+                <span>🌱 연습 모드</span>
                 {currentMode === 'easy' && <span className="text-xs bg-amber-200 text-amber-900 font-bold px-2.5 py-0.5 rounded-full">선택됨</span>}
               </button>
               <button 

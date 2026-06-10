@@ -27,7 +27,7 @@ export default function ScoreBoard({
         }`}>
           <div className="flex items-center gap-1 text-[11px] font-bold text-amber-750 mb-1">
             <Trophy className="w-3 h-3" />
-            <span className="font-jua">쉬운 모드</span>
+            <span className="font-jua">연습 모드</span>
           </div>
           <div className="flex justify-between items-baseline">
             <span className="text-lg md:text-xl font-jua text-amber-950">
