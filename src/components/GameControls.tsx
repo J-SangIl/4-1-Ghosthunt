@@ -168,7 +168,7 @@ export default function GameControls({
             
             <div className="text-center mb-1 flex items-center gap-1 justify-center">
               <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
-              <span className="text-[11px] font-bold text-teal-800 font-jua">좌표 발사대: ( X축 숫자, Y축 숫자 )</span>
+              <span className="text-[11px] font-bold text-teal-800 font-jua">유령의 좌표 입력</span>
             </div>
 
             <div className="flex items-center justify-center gap-1.5 w-full">

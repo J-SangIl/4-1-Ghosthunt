@@ -139,7 +139,86 @@ const generateMission = (score: number): MissionCondition => {
 export default function App() {
   // Game state
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
-  const [currentMode, setMode] = useState<GameMode>('easy');
+  const [currentMode, setCurrentMode] = useState<GameMode>('easy');
+  const [pendingMode, setPendingMode] = useState<GameMode | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+
+  const setMode = (mode: GameMode) => {
+    if (gameStatus === 'playing' && mode !== currentMode) {
+      setPendingMode(mode);
+      setShowConfirmModal(true);
+    } else {
+      setCurrentMode(mode);
+    }
+  };
+
+  const confirmModeChange = (newMode: GameMode) => {
+    // 1. Save and conclude score of previous mode
+    let prevScore = 0;
+    if (currentMode === 'easy') prevScore = scores.easyScore;
+    else if (currentMode === 'normal') prevScore = scores.normalScore;
+    else if (currentMode === 'condition_practice') prevScore = scores.conditionPracticeScore;
+    else if (currentMode === 'condition_survival') prevScore = scores.conditionSurvivalScore;
+
+    triggerHighScoreSave(currentMode, prevScore);
+
+    // 2. Set the new mode
+    setCurrentMode(newMode);
+    setShowConfirmModal(false);
+    setPendingMode(null);
+
+    // 3. Set up the state as if starting a new game in that new mode
+    setLives(3);
+    setMissCount(0);
+    setInputValue('');
+    setInputError(null);
+    setHitMessage({
+      text: "🔄 새로운 작전 모드로 안전하게 전환되어 작전을 원점(0점)부터 다시 시작합니다!",
+      type: 'success'
+    });
+
+    // Reset scores for all playing modes
+    setScores(prev => ({
+      ...prev,
+      easyScore: 0,
+      normalScore: 0,
+      conditionScore: 0,
+      conditionPracticeScore: 0,
+      conditionSurvivalScore: 0,
+    }));
+
+    setGameStatus('playing');
+
+    const isConditionMode = newMode === 'condition_practice' || newMode === 'condition_survival';
+    if (isConditionMode) {
+      setGhosts([]);
+      setActiveBullet(null);
+      setTimeout(() => {
+        setupConditionRound(0);
+      }, 50);
+    } else {
+      setCurrentMission(null);
+      setConditionPoints([]);
+
+      setTimeout(() => {
+        const initialScore = 0;
+        const x = getRandomCoordinateValue(initialScore);
+        const y = getRandomCoordinateValue(initialScore);
+        const maxTime = 12;
+
+        const newGhost: Ghost = {
+          id: `ghost-${Date.now()}`,
+          x,
+          y,
+          timeLeft: maxTime,
+          maxTime,
+          spawnedAt: Date.now(),
+        };
+        setGhosts([newGhost]);
+      }, 50);
+    }
+  };
+
   const [lives, setLives] = useState<number>(3);
   const [missCount, setMissCount] = useState<number>(0);
   
@@ -857,39 +936,35 @@ export default function App() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-1.5 text-amber-900 border-b border-amber-100 pb-2 text-base sm:text-lg font-black font-jua">
                     <span>🎯</span>
-                    <span>유령 저격 모드 (직접 조준 사격)</span>
+                    <span>유령 저격 모드</span>
                   </div>
                   <p className="text-xs text-slate-500 font-sans leading-relaxed">
                     유령의 정확한 좌표를 입력해 저격하세요!
                   </p>
  
-                  <div className="flex flex-col gap-2.5 mt-2.5">
+                  <div className="grid grid-cols-2 gap-2.5 mt-2.5">
                     <button 
                       onClick={() => setMode('easy')}
-                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
                         currentMode === 'easy'
                           ? 'bg-amber-100/60 border-amber-400 text-amber-900 font-bold shadow-md ring-2 ring-amber-200'
                           : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
                       }`}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-black">🌱 연습 모드</span>
-                      </div>
-                      {currentMode === 'easy' && <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">🌱 저격 연습 모드</span>
+                      {currentMode === 'easy' && <span className="text-[9px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full font-sans">선택됨</span>}
                     </button>
                     
                     <button 
                       onClick={() => setMode('normal')}
-                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
                         currentMode === 'normal'
                           ? 'bg-indigo-50 border-indigo-400 text-indigo-800 font-bold shadow-md ring-2 ring-indigo-200'
                           : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
                       }`}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-black">⏱️ 서바이벌 모드</span>
-                      </div>
-                      {currentMode === 'normal' && <span className="text-[10px] bg-indigo-200 text-indigo-900 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">⏱️ 저격 서바이벌</span>
+                      {currentMode === 'normal' && <span className="text-[9px] bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-full font-sans">선택됨</span>}
                     </button>
                   </div>
                 </div>
@@ -909,7 +984,7 @@ export default function App() {
                       className="w-full py-3.5 bg-slate-100 text-slate-400 font-jua text-sm rounded-xl border-b-4 border-slate-300 flex flex-col items-center justify-center gap-0.5 opacity-90 cursor-not-allowed"
                     >
                       <span>저격 도전 시작!</span>
-                      <span className="text-[10px] font-sans text-slate-400">위의 연습/서바이벌 모드를 선택하세요.</span>
+                      <span className="text-[10px] font-sans text-slate-400">위의 저격 연습/서바이벌 모드를 선택하세요.</span>
                     </button>
                   )}
                 </div>
@@ -926,39 +1001,35 @@ export default function App() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-1.5 text-teal-900 border-b border-teal-100 pb-2 text-base sm:text-lg font-black font-jua">
                     <span>💥</span>
-                    <span>유령 소탕 모드 (조건 일제 타격)</span>
+                    <span>유령 소탕 모드</span>
                   </div>
                   <p className="text-xs text-slate-500 font-sans leading-relaxed">
                     조건을 만족하는 모든 유령들을 한번에 소탕하세요!
                   </p>
  
-                  <div className="flex flex-col gap-2.5 mt-2.5">
+                  <div className="grid grid-cols-2 gap-2.5 mt-2.5">
                     <button 
                       onClick={() => setMode('condition_practice')}
-                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
                         currentMode === 'condition_practice'
                           ? 'bg-teal-50 border-teal-400 text-teal-850 font-bold shadow-md ring-2 ring-teal-200'
                           : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650'
                       }`}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-black">🌱 소탕 연습 모드</span>
-                      </div>
-                      {currentMode === 'condition_practice' && <span className="text-[10px] bg-teal-200 text-teal-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">🌱 소탕 연습 모드</span>
+                      {currentMode === 'condition_practice' && <span className="text-[9px] bg-teal-200 text-teal-950 font-bold px-2 py-0.5 rounded-full font-sans">선택됨</span>}
                     </button>
  
                     <button 
                       onClick={() => setMode('condition_survival')}
-                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
                         currentMode === 'condition_survival'
                           ? 'bg-rose-50 border-rose-300 text-rose-850 font-bold shadow-md ring-2 ring-rose-200'
                           : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650'
                       }`}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-black">⏱️ 소탕 서바이벌 모드</span>
-                      </div>
-                      {currentMode === 'condition_survival' && <span className="text-[10px] bg-rose-200 text-rose-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">⏱️ 소탕 서바이벌</span>
+                      {currentMode === 'condition_survival' && <span className="text-[9px] bg-rose-200 text-rose-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
                     </button>
                   </div>
                 </div>
@@ -1081,6 +1152,60 @@ export default function App() {
         </footer>
       </div>
  
+      {showConfirmModal && pendingMode && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-amber-300 shadow-2xl flex flex-col gap-4 text-center"
+          >
+            <div className="text-4xl">🚨</div>
+            <h3 className="text-xl font-black font-jua text-amber-950">작전 모드 전환 확인</h3>
+            <p className="text-xs sm:text-sm text-slate-650 font-sans leading-relaxed">
+              현재 진행 중인 <span className="font-bold text-amber-900">{
+                currentMode === 'easy' 
+                  ? '연습 모드' 
+                  : currentMode === 'normal' 
+                    ? '서바이벌 모드' 
+                    : currentMode === 'condition_practice' 
+                      ? '소탕 연습 모드' 
+                      : '소탕 서바이벌 모드'
+              }</span>를 종료하시겠습니까? <br />
+              <span className="font-bold text-teal-700">이전까지 획득한 점수가 정산되어 최고 기록에 저장되며,</span><br />
+              새로운 모드(<span className="font-bold text-indigo-750">{
+                pendingMode === 'easy' 
+                  ? '연습 모드' 
+                  : pendingMode === 'normal' 
+                    ? '서바이벌 모드' 
+                    : pendingMode === 'condition_practice' 
+                      ? '소탕 연습 모드' 
+                      : '소탕 서바이벌 모드'
+              }</span>)가 처음부터 신규 작전으로 시작됩니다.
+            </p>
+            
+            <div className="flex gap-2.5 mt-2">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setPendingMode(null);
+                }}
+                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-750 font-jua text-sm rounded-xl transition-all border border-slate-300 cursor-pointer"
+              >
+                계속 플레이하기
+              </button>
+              <button
+                onClick={() => {
+                  confirmModeChange(pendingMode);
+                }}
+                className="flex-1 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-jua text-sm rounded-xl transition-all shadow-md border-b-4 border-emerald-800 cursor-pointer"
+              >
+                정리 후 전환하기
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Game Over modal overlay */}
       <GameOverModal
         isOpen={gameStatus === 'gameover'}

@@ -83,9 +83,9 @@ export default function GameOverModal({
             <p className="text-teal-100 text-xs font-mono font-bold mt-1">
               GAME OVER - {
                 currentMode === 'easy' 
-                  ? '연습 모드' 
+                  ? '저격 연습 모드' 
                   : currentMode === 'normal' 
-                    ? '서바이벌 모드' 
+                    ? '저격 서바이벌 모드' 
                     : currentMode === 'condition_practice'
                       ? '소탕 연습 모드'
                       : '소탕 서바이벌 모드'

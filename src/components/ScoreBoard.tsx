@@ -25,7 +25,7 @@ export default function ScoreBoard({
       <div className="grid grid-cols-2 gap-2">
         {(currentMode === 'easy' || currentMode === 'normal') && (
           <>
-            {/* 연습 모드 Card Button */}
+            {/* 저격 연습 모드 Card Button */}
             <button
               type="button"
               onClick={() => onSelectMode?.('easy')}
@@ -34,11 +34,11 @@ export default function ScoreBoard({
                   ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200 shadow-sm' 
                   : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-amber-50/20'
               }`}
-              title="클릭하여 연습 모드로 전환"
+              title="클릭하여 저격 연습 모드로 전환"
             >
               <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-amber-900 mb-1">
                 <Trophy className="w-3 h-3 flex-shrink-0" />
-                <span className="font-jua break-keep">연습 모드</span>
+                <span className="font-jua break-keep">저격 연습</span>
               </div>
               <div className="flex flex-col w-full">
                 <span className="text-base sm:text-lg font-black font-jua text-amber-950">
@@ -50,7 +50,7 @@ export default function ScoreBoard({
               </div>
             </button>
 
-            {/* 일반 모드 Card Button */}
+            {/* 저격 서바이벌 모드 Card Button */}
             <button
               type="button"
               onClick={() => onSelectMode?.('normal')}
@@ -59,11 +59,11 @@ export default function ScoreBoard({
                   ? 'bg-indigo-50 border-indigo-350 ring-2 ring-indigo-200 shadow-sm' 
                   : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20'
               }`}
-              title="클릭하여 서바이벌 모드로 전환"
+              title="클릭하여 저격 서바이벌 모드로 전환"
             >
               <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-indigo-900 mb-1">
                 <Flame className="w-3 h-3 flex-shrink-0" />
-                <span className="font-jua break-keep">서바이벌</span>
+                <span className="font-jua break-keep">저격 서바이벌</span>
               </div>
               <div className="flex flex-col w-full">
                 <span className="text-base sm:text-lg font-black font-jua text-indigo-950">
