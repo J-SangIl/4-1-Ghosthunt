@@ -380,11 +380,11 @@ export default function CoordinatePlane({
                     animate={{ scale: 1, rotate: 0 }}
                     className="relative w-11 h-11 flex items-center justify-center animate-fade-in"
                   >
-                    {/* 1. 정답(유령) + 플레이어 선택함 (성공 유령 퇴치) -> 라벨 없음 */}
+                    {/* 1. 정답(유령) + 플레이어 선택함 (성공 유령 퇴치) -> 라벨 없음 (O 이모지) */}
                     {pt.isCorrect && pt.selected && (
                       <div className="relative flex items-center justify-center">
                         <span className="text-3xl leading-none select-none filter opacity-45 grayscale">👻</span>
-                        <span className="absolute text-2xl leading-none font-black select-none text-red-500 bg-white/70 rounded-full px-1">❌</span>
+                        <span className="absolute text-2xl leading-none font-black select-none text-emerald-600 bg-white/70 rounded-full px-1">⭕</span>
                       </div>
                     )}
 
@@ -400,12 +400,11 @@ export default function CoordinatePlane({
                       </motion.div>
                     )}
 
-                    {/* 3. 오답(사람) + 플레이어 선택함 (실패 시민 타격) -> 라벨 노출 */}
+                    {/* 3. 오답(사람) + 플레이어 선택함 (실패 시민 타격) -> 라벨 없음 (X 이모지) */}
                     {pt.isCorrect === false && pt.selected && (
                       <div className="relative flex items-center justify-center">
                         <span className="text-3xl leading-none select-none filter opacity-35">{pt.civilianEmoji || "🧍"}</span>
-                        <span className="absolute text-2xl leading-none font-black select-none text-rose-600 bg-white/70 rounded-full px-1">😭</span>
-                        <span className="absolute -top-3 text-[8px] whitespace-nowrap bg-rose-700 text-white font-black px-1.5 py-0.5 rounded shadow">오인 타격!</span>
+                        <span className="absolute text-2xl leading-none font-black select-none text-rose-600 bg-white/70 rounded-full px-1">❌</span>
                       </div>
                     )}
 
