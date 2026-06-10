@@ -87,17 +87,32 @@ const generateMission = (score: number): MissionCondition => {
   }
 
   // (16점~): 모든 종류(일차함수형 대각선 관계 포함)
-  const poolType = Math.floor(Math.random() * 6);
+  let poolType: number;
+  if (score > 30) {
+    poolType = Math.floor(Math.random() * 6);
+  } else {
+    // 3번('합이' 조건) 제외: [0, 1, 2, 4, 5] 중 무작위 선택
+    const allowedPools = [0, 1, 2, 4, 5];
+    poolType = allowedPools[Math.floor(Math.random() * allowedPools.length)];
+  }
+
   if (poolType === 0) {
     return {
       text: "x좌표와 y좌표가 같은 점",
       check: (x, y) => x === y
     };
   } else if (poolType === 1) {
-    return {
-      text: "x좌표가 y좌표의 2배인 점",
-      check: (x, y) => x === y * 2
-    };
+    if (Math.random() > 0.5) {
+      return {
+        text: "x좌표가 y좌표의 2배인 점",
+        check: (x, y) => x === y * 2
+      };
+    } else {
+      return {
+        text: "y좌표가 x좌표의 2배인 점",
+        check: (x, y) => y === x * 2
+      };
+    }
   } else if (poolType === 2) {
     const products = [6, 12, -6, -12, 8, -8];
     const prod = products[Math.floor(Math.random() * products.length)];
