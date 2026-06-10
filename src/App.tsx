@@ -9,11 +9,132 @@ import {
   Play, 
   Settings
 } from 'lucide-react';
-import { Coordinate, Ghost, BulletEffect, GameMode, GameStatus, ScoreState } from './types';
+import { Coordinate, Ghost, BulletEffect, GameMode, GameStatus, ScoreState, ConditionTargetPoint, MissionCondition } from './types';
 import CoordinatePlane from './components/CoordinatePlane';
 import ScoreBoard from './components/ScoreBoard';
 import GameControls from './components/GameControls';
 import GameOverModal from './components/GameOverModal';
+
+// Helper function to generate missions dynamically based on score
+const generateMission = (score: number): MissionCondition => {
+  // (0점~4점): 좌표로 제시
+  if (score <= 4) {
+    const targetX = Math.floor(Math.random() * 15) - 7; // -7 to 7
+    let targetY = Math.floor(Math.random() * 15) - 7;
+    // avoid origin (0,0) too much
+    if (targetX === 0 && targetY === 0) targetY = 2;
+    return {
+      text: `좌표가 (${targetX}, ${targetY})인 점`,
+      check: (x, y) => x === targetX && y === targetY
+    };
+  }
+
+  // (5점~6점): x축 위의 점, y축 위의 점
+  if (score <= 6) {
+    const isX = Math.random() > 0.5;
+    if (isX) {
+      return { text: "x축 위에 있는 점", check: (x, y) => y === 0 && x !== 0 };
+    } else {
+      return { text: "y축 위에 있는 점", check: (x, y) => x === 0 && y !== 0 };
+    }
+  }
+
+  // (7점~9점): 사분면에 대한 조건('제1사분면 위에 있는 점' 등)
+  if (score <= 9) {
+    const roll = Math.floor(Math.random() * 4);
+    if (roll === 0) {
+      return { text: "제1사분면 위에 있는 점", check: (x, y) => x > 0 && y > 0 };
+    } else if (roll === 1) {
+      return { text: "제2사분면 위에 있는 점", check: (x, y) => x < 0 && y > 0 };
+    } else if (roll === 2) {
+      return { text: "제3사분면 위에 있는 점", check: (x, y) => x < 0 && y < 0 };
+    } else {
+      return { text: "제4사분면 위에 있는 점", check: (x, y) => x > 0 && y < 0 };
+    }
+  }
+
+  // (10점~15점): x좌표 또는 y좌표가 일정한 점들 ('x좌표가 ~~인 점', '(2, -3.5)와 y좌표가 같은 점' 등)
+  if (score <= 15) {
+    const subType = Math.floor(Math.random() * 3);
+    if (subType === 0) {
+      const value = Math.floor(Math.random() * 13) - 6; // -6 to 6
+      return {
+        text: `x좌표가 ${value}인 점`,
+        check: (x, y) => x === value
+      };
+    } else if (subType === 1) {
+      const value = Math.floor(Math.random() * 13) - 6; // -6 to 6
+      return {
+        text: `y좌표가 ${value}인 점`,
+        check: (x, y) => y === value
+      };
+    } else {
+      const refX = Math.floor(Math.random() * 13) - 6;
+      const refY = (Math.floor(Math.random() * 13) - 6) * 0.5; // Supports decimals in layout
+      const isY = Math.random() > 0.5;
+      if (isY) {
+        return {
+          text: `(${refX}, ${refY})와 y좌표가 같은 점`,
+          check: (x, y) => y === refY
+        };
+      } else {
+        return {
+          text: `(${refX}, ${refY})와 x좌표가 같은 점`,
+          check: (x, y) => x === refX
+        };
+      }
+    }
+  }
+
+  // (16점~): 모든 종류(일차함수형 대각선 관계 포함)
+  const poolType = Math.floor(Math.random() * 6);
+  if (poolType === 0) {
+    return {
+      text: "x좌표와 y좌표가 같은 점",
+      check: (x, y) => x === y
+    };
+  } else if (poolType === 1) {
+    return {
+      text: "x좌표가 y좌표의 2배인 점",
+      check: (x, y) => x === y * 2
+    };
+  } else if (poolType === 2) {
+    const products = [6, 12, -6, -12, 8, -8];
+    const prod = products[Math.floor(Math.random() * products.length)];
+    return {
+      text: `x좌표와 y좌표의 곱이 ${prod}인 점`,
+      check: (x, y) => x * y === prod
+    };
+  } else if (poolType === 3) {
+    const sums = [2, 4, -2, -4, 0];
+    const sum = sums[Math.floor(Math.random() * sums.length)];
+    return {
+      text: `x좌표와 y좌표의 합이 ${sum}인 점`,
+      check: (x, y) => x + y === sum
+    };
+  } else if (poolType === 4) {
+    // any from 10~15
+    const value = Math.floor(Math.random() * 13) - 6;
+    if (Math.random() > 0.5) {
+      return {
+        text: `y좌표가 ${value}인 점`,
+        check: (x, y) => y === value
+      };
+    } else {
+      return {
+        text: `x좌표가 ${value}인 점`,
+        check: (x, y) => x === value
+      };
+    }
+  } else {
+    // any from 7~9
+    const roll = Math.floor(Math.random() * 4);
+    if (roll === 0) return { text: "제1사분면 위에 있는 점", check: (x, y) => x > 0 && y > 0 };
+    if (roll === 1) return { text: "제2사분면 위에 있는 점", check: (x, y) => x < 0 && y > 0 };
+    if (roll === 2) return { text: "제3사분면 위에 있는 점", check: (x, y) => x < 0 && y < 0 };
+    return { text: "제4사분면 위에 있는 점", check: (x, y) => x > 0 && y < 0 };
+  }
+};
 
 export default function App() {
   // Game state
@@ -28,16 +149,29 @@ export default function App() {
     easyScore: 0,
     normalHighScore: 0,
     normalScore: 0,
+    conditionHighScore: 0,
+    conditionScore: 0,
+    conditionPracticeHighScore: 0,
+    conditionPracticeScore: 0,
+    conditionSurvivalHighScore: 0,
+    conditionSurvivalScore: 0,
   });
 
   // Active actors
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [activeBullet, setActiveBullet] = useState<BulletEffect | null>(null);
+
+  // Condition Matching Mode state
+  const [conditionPoints, setConditionPoints] = useState<ConditionTargetPoint[]>([]);
+  const [currentMission, setCurrentMission] = useState<MissionCondition | null>(null);
+  const [conditionGameState, setConditionGameState] = useState<'selecting' | 'firing' | 'revealed' | 'animating'>('selecting');
+  const [activeExplosions, setActiveExplosions] = useState<Coordinate[]>([]);
+  const [conditionTimeLeft, setConditionTimeLeft] = useState<number>(10);
   
   // Controls & Inputs
   const [inputValue, setInputValue] = useState<string>('');
   const [inputError, setInputError] = useState<string | null>(null);
-  const [showCursorLabel, setShowCursorLabel] = useState<boolean>(true);
+  const [showCursorLabel, setShowCursorLabel] = useState<boolean>(false);
   const [screenShake, setScreenShake] = useState<boolean>(false);
   
   // Feedback alerts
@@ -48,10 +182,16 @@ export default function App() {
     try {
       const easyHigh = localStorage.getItem('coord_game_easy_high') || '0';
       const normalHigh = localStorage.getItem('coord_game_normal_high') || '0';
+      const conditionHigh = localStorage.getItem('coord_game_condition_high') || '0';
+      const condPracticeHigh = localStorage.getItem('coord_game_cond_practice_high') || '0';
+      const condSurvivalHigh = localStorage.getItem('coord_game_cond_survival_high') || '0';
       setScores(prev => ({
         ...prev,
         easyHighScore: parseInt(easyHigh, 10),
         normalHighScore: parseInt(normalHigh, 10),
+        conditionHighScore: parseInt(conditionHigh, 10),
+        conditionPracticeHighScore: parseInt(condPracticeHigh, 10),
+        conditionSurvivalHighScore: parseInt(condSurvivalHigh, 10),
       }));
     } catch (e) {
       console.warn("localStorage is not available: ", e);
@@ -66,10 +206,25 @@ export default function App() {
           localStorage.setItem('coord_game_easy_high', currentScore.toString());
           setScores(prev => ({ ...prev, easyHighScore: currentScore }));
         }
-      } else {
+      } else if (mode === 'normal') {
         if (currentScore > scores.normalHighScore) {
           localStorage.setItem('coord_game_normal_high', currentScore.toString());
           setScores(prev => ({ ...prev, normalHighScore: currentScore }));
+        }
+      } else if (mode === 'condition_practice') {
+        if (currentScore > scores.conditionPracticeHighScore) {
+          localStorage.setItem('coord_game_cond_practice_high', currentScore.toString());
+          setScores(prev => ({ ...prev, conditionPracticeHighScore: currentScore }));
+        }
+      } else if (mode === 'condition_survival') {
+        if (currentScore > scores.conditionSurvivalHighScore) {
+          localStorage.setItem('coord_game_cond_survival_high', currentScore.toString());
+          setScores(prev => ({ ...prev, conditionSurvivalHighScore: currentScore }));
+        }
+      } else {
+        if (currentScore > scores.conditionHighScore) {
+          localStorage.setItem('coord_game_condition_high', currentScore.toString());
+          setScores(prev => ({ ...prev, conditionHighScore: currentScore }));
         }
       }
     } catch (e) {
@@ -98,7 +253,167 @@ export default function App() {
     }
   };
 
-  // Spawns a new ghost at valid target coordinates
+  // Setup round specifically for condition matching mode
+  const setupConditionRound = (scoreForDiff: number) => {
+    let mission = generateMission(scoreForDiff);
+    let allCorrectCoords: {x: number, y: number}[] = [];
+    let allIncorrectCoords: {x: number, y: number}[] = [];
+    let maxCorrect = 1;
+
+    // Guarantee that if the mission is NOT a single coordinate matching mission, there are at least 3 possible correct targets dynamically.
+    // Try up to 50 times to fetch a qualifying mission.
+    for (let attempt = 0; attempt < 50; attempt++) {
+      allCorrectCoords = [];
+      allIncorrectCoords = [];
+      mission = generateMission(scoreForDiff);
+      const isCoordinateTarget = mission.text.includes("좌표가 (");
+
+      for (let xi = -18; xi <= 18; xi++) {
+        const x = xi * 0.5;
+        for (let yi = -18; yi <= 18; yi++) {
+          const y = yi * 0.5;
+          if (mission.check(x, y)) {
+            allCorrectCoords.push({ x, y });
+          } else {
+            allIncorrectCoords.push({ x, y });
+          }
+        }
+      }
+
+      maxCorrect = isCoordinateTarget ? 1 : Math.floor(Math.random() * 3) + 3; // 3, 4, or 5 targets
+
+      if (isCoordinateTarget || allCorrectCoords.length >= maxCorrect) {
+        break; // Found a qualifying mission satisfying the condition
+      }
+    }
+
+    setCurrentMission(mission);
+    setConditionGameState('selecting');
+    setActiveExplosions([]);
+
+    const pointsList: ConditionTargetPoint[] = [];
+    const coordsSet = new Set<string>();
+
+    const addPoint = (x: number, y: number, isCorrect: boolean, enforceDistance = true) => {
+      const key = `${x},${y}`;
+      if (coordsSet.has(key)) return false;
+
+      // Enforce Euclidean distance to keep points visible and clickable
+      if (enforceDistance) {
+        const minDistance = 1.5; // Always keep a safe selection distance
+        for (const pt of pointsList) {
+          const dist = Math.sqrt(Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2));
+          if (dist < minDistance) {
+            return false;
+          }
+        }
+      }
+
+      coordsSet.add(key);
+
+      const civilianOptions = ["🧍", "🧍‍♂️", "🧍‍♀️"];
+      const randomCivilian = civilianOptions[Math.floor(Math.random() * civilianOptions.length)];
+
+      pointsList.push({
+        id: `pt-${Date.now()}-${Math.random()}`,
+        x,
+        y,
+        isCorrect,
+        selected: false,
+        isGhost: isCorrect,
+        civilianEmoji: randomCivilian,
+      });
+      return true;
+    };
+
+    // Shuffle the possible coordinates to pick randomly
+    const shuffledCorrect = allCorrectCoords.sort(() => Math.random() - 0.5);
+    const shuffledIncorrect = allIncorrectCoords.sort(() => Math.random() - 0.5);
+
+    if (maxCorrect > shuffledCorrect.length) {
+      maxCorrect = shuffledCorrect.length;
+    }
+
+    // 1st pass: add correct points with standard distance check (1.5)
+    let correctCount = 0;
+    for (const coord of shuffledCorrect) {
+      if (correctCount >= maxCorrect) break;
+      if (addPoint(coord.x, coord.y, true, true)) {
+        correctCount++;
+      }
+    }
+
+    // 2nd pass: fallback with slightly smaller distance (1.05)
+    if (correctCount < maxCorrect) {
+      for (const coord of shuffledCorrect) {
+        if (correctCount >= maxCorrect) break;
+        const key = `${coord.x},${coord.y}`;
+        if (coordsSet.has(key)) continue;
+
+        let farEnough = true;
+        for (const pt of pointsList) {
+          const dist = Math.sqrt(Math.pow(pt.x - coord.x, 2) + Math.pow(pt.y - coord.y, 2));
+          if (dist < 1.05) farEnough = false;
+        }
+
+        if (farEnough) {
+          if (addPoint(coord.x, coord.y, true, false)) {
+            correctCount++;
+          }
+        }
+      }
+    }
+
+    // 3rd pass: absolute fallback with no distance check to guarantee matching coordinates exist
+    if (correctCount < maxCorrect) {
+      for (const coord of shuffledCorrect) {
+        if (correctCount >= maxCorrect) break;
+        if (addPoint(coord.x, coord.y, true, false)) {
+          correctCount++;
+        }
+      }
+    }
+
+    // Now fill up to exactly 10 points total with incorrect coordinates
+    // 1st pass: incorrect points with standard distance check (1.5)
+    for (const coord of shuffledIncorrect) {
+      if (pointsList.length >= 10) break;
+      addPoint(coord.x, coord.y, false, true);
+    }
+
+    // 2nd pass: incorrect points with slightly smaller distance check (1.05)
+    if (pointsList.length < 10) {
+      for (const coord of shuffledIncorrect) {
+        if (pointsList.length >= 10) break;
+        const key = `${coord.x},${coord.y}`;
+        if (coordsSet.has(key)) continue;
+
+        let farEnough = true;
+        for (const pt of pointsList) {
+          const dist = Math.sqrt(Math.pow(pt.x - coord.x, 2) + Math.pow(pt.y - coord.y, 2));
+          if (dist < 1.05) farEnough = false;
+        }
+
+        if (farEnough) {
+          addPoint(coord.x, coord.y, false, false);
+        }
+      }
+    }
+
+    // 3rd pass: absolute fallback incorrect points with no distance check
+    if (pointsList.length < 10) {
+      for (const coord of shuffledIncorrect) {
+        if (pointsList.length >= 10) break;
+        addPoint(coord.x, coord.y, false, false);
+      }
+    }
+
+    // Shuffle the final exact 10 points list
+    const shuffledPoints = pointsList.slice(0, 10).sort(() => Math.random() - 0.5);
+    setConditionPoints(shuffledPoints);
+  };
+
+  // Spawns a new ghost at valid target coordinates (Easy/Normal Modes)
   const spawnNewGhost = (scoreForDiff: number) => {
     const x = getRandomCoordinateValue(scoreForDiff);
     const y = getRandomCoordinateValue(scoreForDiff);
@@ -132,42 +447,58 @@ export default function App() {
       ...prev,
       easyScore: 0,
       normalScore: 0,
+      conditionScore: 0,
+      conditionPracticeScore: 0,
+      conditionSurvivalScore: 0,
     }));
 
-    // Spawn first target
-    const targetScore = 0;
     setGameStatus('playing');
     
-    // Use timeout to let state settle before spawning
-    setTimeout(() => {
-      const initialScore = 0;
-      // We read currentMode inside spawn since state is set
-      const x = getRandomCoordinateValue(initialScore);
-      const y = getRandomCoordinateValue(initialScore);
-      const isEasy = currentMode === 'easy';
-      const maxTime = 12;
+    const isConditionMode = currentMode === 'condition_practice' || currentMode === 'condition_survival';
+    if (isConditionMode) {
+      setTimeout(() => {
+        setupConditionRound(0);
+      }, 50);
+    } else {
+      setTimeout(() => {
+        const initialScore = 0;
+        const x = getRandomCoordinateValue(initialScore);
+        const y = getRandomCoordinateValue(initialScore);
+        const maxTime = 12;
 
-      const newGhost: Ghost = {
-        id: `ghost-${Date.now()}`,
-        x,
-        y,
-        timeLeft: maxTime,
-        maxTime,
-        spawnedAt: Date.now(),
-      };
-      setGhosts([newGhost]);
-    }, 50);
+        const newGhost: Ghost = {
+          id: `ghost-${Date.now()}`,
+          x,
+          y,
+          timeLeft: maxTime,
+          maxTime,
+          spawnedAt: Date.now(),
+        };
+        setGhosts([newGhost]);
+      }, 50);
+    }
   };
 
   // Resets sessions and returns to welcome dashboard
   const handleResetGame = () => {
     setGameStatus('idle');
     setGhosts([]);
+    setConditionPoints([]);
+    setCurrentMission(null);
     setActiveBullet(null);
+    setActiveExplosions([]);
     setInputValue('');
     setMissCount(0);
     setInputError(null);
     setHitMessage(null);
+  };
+
+  // Toggle selection of a point in condition matchmaking mode
+  const handleTogglePoint = (id: string) => {
+    if (conditionGameState !== 'selecting') return;
+    setConditionPoints(prev => prev.map(pt => 
+      pt.id === id ? { ...pt, selected: !pt.selected } : pt
+    ));
   };
 
   // Normal Mode Real-time Timer Tick Interval
@@ -348,6 +679,133 @@ export default function App() {
     }, 900);
   };
 
+  // 10-second condition limit countdown for Condition Survival mode
+  useEffect(() => {
+    if (gameStatus !== 'playing' || currentMode !== 'condition_survival') return;
+    if (conditionGameState !== 'selecting') return;
+
+    // Reset timer to 10s upon round start
+    setConditionTimeLeft(10);
+
+    const interval = setInterval(() => {
+      setConditionTimeLeft(prev => {
+        const next = prev - 0.1;
+        if (next <= 0) {
+          clearInterval(interval);
+          handleConditionTimeout();
+          return 0;
+        }
+        return next;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [gameStatus, currentMode, currentMission, conditionGameState]);
+
+  const handleConditionTimeout = () => {
+    // Force transition to revealed
+    setConditionGameState('revealed');
+    setHitMessage({
+      text: "⏱️ 시간 초과! (제한 시간 10초가 지나 작전에 실패하고 체력이 1 깎였습니다!)",
+      type: 'warn'
+    });
+    const nextLives = lives - 1;
+    setLives(nextLives);
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 400);
+  };
+
+  // Skip to another problem in practice mode
+  const handleConditionSkip = () => {
+    if (currentMode !== 'condition_practice' || conditionGameState !== 'selecting') return;
+    setupConditionRound(scores.conditionPracticeScore);
+    setHitMessage(null);
+  };
+
+  // Condition mode bullet firing sequence
+  const handleConditionFire = () => {
+    if (conditionGameState !== 'selecting') return;
+
+    const selectedPoints = conditionPoints.filter(p => p.selected);
+    
+    // 1단계: 미사일 낙하 애니메이션 (firing 상태 변환)
+    setConditionGameState('firing');
+    const explosions = selectedPoints.map(p => ({ x: p.x, y: p.y }));
+    setActiveExplosions(explosions);
+    setScreenShake(true);
+    setTimeout(() => setScreenShake(false), 400);
+
+    // 1초 동안 낙하 및 폭발 이펙트 진행
+    setTimeout(() => {
+      // 2단계: 정체 확인 및 결과 표시 (revealed 상태 변환)
+      setConditionGameState('revealed');
+      setActiveExplosions([]);
+
+      // 3단계: 판정 및 결과 확인 대기
+      const hasMissedGhost = conditionPoints.some(p => p.isCorrect && !p.selected);
+      const hasInjuredCivilian = conditionPoints.some(p => !p.isCorrect && p.selected);
+      const isPerfect = !hasMissedGhost && !hasInjuredCivilian;
+
+      if (isPerfect) {
+        setHitMessage({
+          text: "🎯 완벽해요! 모든 유령을 처치하고 시민들을 구했습니다! (+1점)",
+          type: 'success'
+        });
+        
+        if (currentMode === 'condition_survival') {
+          const nextScore = scores.conditionSurvivalScore + 1;
+          setScores(prev => ({ ...prev, conditionSurvivalScore: nextScore }));
+          triggerHighScoreSave('condition_survival', nextScore);
+        } else {
+          const nextScore = scores.conditionPracticeScore + 1;
+          setScores(prev => ({ ...prev, conditionPracticeScore: nextScore }));
+          triggerHighScoreSave('condition_practice', nextScore);
+        }
+
+      } else {
+        let failMessage = "💥 작전 실패! ";
+        if (hasMissedGhost && hasInjuredCivilian) {
+          failMessage += "유령을 놓쳤고, 무고한 시민까지 공격했습니다!";
+        } else if (hasMissedGhost) {
+          failMessage += "미션 조건에 맞는 유령을 놓쳤습니다!";
+        } else {
+          failMessage += "유령이 아닌 시민을 실수로 공격했습니다!";
+        }
+
+        if (currentMode === 'condition_survival') {
+          failMessage += " (체력 -1) 😢";
+          setHitMessage({ text: failMessage, type: 'warn' });
+
+          const nextLives = lives - 1;
+          setLives(nextLives);
+          setScreenShake(true);
+          setTimeout(() => setScreenShake(false), 400);
+        } else {
+          failMessage += " (연습 모드이므로 체력은 차감되지 않습니다!) 🌱";
+          setHitMessage({ text: failMessage, type: 'warn' });
+          setScreenShake(true);
+          setTimeout(() => setScreenShake(false), 400);
+        }
+      }
+    }, 1000);
+  };
+
+  // Move to next mission or end the game based on the manual Next button click
+  const handleConditionNext = () => {
+    if (currentMode === 'condition_survival') {
+      if (lives <= 0) {
+        setGameStatus('gameover');
+        triggerHighScoreSave('condition_survival', scores.conditionSurvivalScore);
+      } else {
+        setupConditionRound(scores.conditionSurvivalScore);
+        setHitMessage(null);
+      }
+    } else {
+      setupConditionRound(scores.conditionPracticeScore);
+      setHitMessage(null);
+    }
+  };
+
   return (
     <div className={`min-h-screen text-slate-800 p-3 sm:p-5 flex flex-col md:justify-center items-center relative overflow-x-hidden ${screenShake ? 'shake-animation' : ''}`}>
       
@@ -376,48 +834,157 @@ export default function App() {
 
         {/* Action Panel Split (Left: Space Grid Coordinate Board, Right: HUD dashboard Controls) */}
         {gameStatus === 'idle' ? (
-          /* Simple Mode Selection Card */
-          <div className="max-w-md mx-auto w-full bg-white/95 rounded-3xl border-4 border-emerald-500 p-6 sm:p-8 shadow-2xl text-center flex flex-col gap-6 animate-fade-in my-4">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-2xl font-black text-slate-900 font-jua flex justify-center items-center gap-1.5 pt-2">
-                <span>게임 난이도 선택</span>
+          /* Multi-Box Mode Layout Split into Side-by-Side emerald cards */
+          <div className="max-w-4xl mx-auto w-full flex flex-col gap-6 animate-fade-in my-4">
+            <div className="text-center flex flex-col gap-1">
+              <h2 className="text-3xl font-black text-slate-900 font-jua flex justify-center items-center gap-1.5 pt-2">
+                <span>게임 모드 선택</span>
               </h2>
+              <span className="text-sm text-slate-500 font-medium font-sans">원하는 스타일의 수학 소탕 도전을 선택해보세요!</span>
             </div>
 
-            {/* Mode selection buttons */}
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={() => setMode('easy')}
-                className={`py-4 px-4 rounded-2xl border-2 font-jua text-base transition-all text-center cursor-pointer flex justify-between items-center ${
-                  currentMode === 'easy'
-                    ? 'bg-amber-50 border-amber-400 text-amber-800 font-bold shadow-md ring-2 ring-amber-200'
-                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+            {/* Two big independent panels aligned side-to-side */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+              
+              {/* 유령 저격 모드 Green Box Card */}
+              <div 
+                className={`rounded-3xl border-4 p-5 sm:p-6 shadow-xl flex flex-col justify-between gap-5 transition-all bg-white relative ${
+                  currentMode === 'easy' || currentMode === 'normal'
+                    ? 'border-emerald-500 ring-4 ring-emerald-100 shadow-emerald-100'
+                    : 'border-slate-300 hover:border-slate-400 opacity-95'
                 }`}
               >
-                <span>🌱 연습 모드</span>
-                {currentMode === 'easy' && <span className="text-xs bg-amber-200 text-amber-900 font-bold px-2.5 py-0.5 rounded-full">선택됨</span>}
-              </button>
-              <button 
-                onClick={() => setMode('normal')}
-                className={`py-4 px-4 rounded-2xl border-2 font-jua text-base transition-all text-center cursor-pointer flex justify-between items-center ${
-                  currentMode === 'normal'
-                    ? 'bg-indigo-50 border-indigo-400 text-indigo-800 font-bold shadow-md ring-2 ring-indigo-200'
-                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 text-amber-900 border-b border-amber-100 pb-2 text-base sm:text-lg font-black font-jua">
+                    <span>🎯</span>
+                    <span>유령 저격 모드 (직접 조준 사격)</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                    유령의 정확한 좌표를 입력해 저격하세요!
+                  </p>
+ 
+                  <div className="flex flex-col gap-2.5 mt-2.5">
+                    <button 
+                      onClick={() => setMode('easy')}
+                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                        currentMode === 'easy'
+                          ? 'bg-amber-100/60 border-amber-400 text-amber-900 font-bold shadow-md ring-2 ring-amber-200'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-black">🌱 연습 모드</span>
+                      </div>
+                      {currentMode === 'easy' && <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                    </button>
+                    
+                    <button 
+                      onClick={() => setMode('normal')}
+                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                        currentMode === 'normal'
+                          ? 'bg-indigo-50 border-indigo-400 text-indigo-800 font-bold shadow-md ring-2 ring-indigo-200'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                      }`}
+                    >
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-black">⏱️ 서바이벌 모드</span>
+                      </div>
+                      {currentMode === 'normal' && <span className="text-[10px] bg-indigo-200 text-indigo-900 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                    </button>
+                  </div>
+                </div>
+ 
+                <div className="w-full">
+                  {(currentMode === 'easy' || currentMode === 'normal') ? (
+                    <button
+                      onClick={handleStartGame}
+                      className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-jua text-base rounded-xl cursor-pointer shadow-lg hover:scale-[1.01] transition-all text-center border-b-4 border-emerald-800 flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-4 h-4 fill-white animate-pulse" />
+                      <span>저격 도전 시작!</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3.5 bg-slate-100 text-slate-400 font-jua text-sm rounded-xl border-b-4 border-slate-300 flex flex-col items-center justify-center gap-0.5 opacity-90 cursor-not-allowed"
+                    >
+                      <span>저격 도전 시작!</span>
+                      <span className="text-[10px] font-sans text-slate-400">위의 연습/서바이벌 모드를 선택하세요.</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+ 
+              {/* 유령 소탕 모드 Green Box Card */}
+              <div 
+                className={`rounded-3xl border-4 p-5 sm:p-6 shadow-xl flex flex-col justify-between gap-5 transition-all bg-white relative ${
+                  currentMode === 'condition_practice' || currentMode === 'condition_survival'
+                    ? 'border-teal-500 ring-4 ring-teal-100 shadow-teal-100'
+                    : 'border-slate-300 hover:border-slate-400 opacity-95'
                 }`}
               >
-                <span>⏱️ 일반 모드(시간 제한)</span>
-                {currentMode === 'normal' && <span className="text-xs bg-indigo-200 text-indigo-900 font-bold px-2.5 py-0.5 rounded-full">선택됨</span>}
-              </button>
-            </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 text-teal-900 border-b border-teal-100 pb-2 text-base sm:text-lg font-black font-jua">
+                    <span>💥</span>
+                    <span>유령 소탕 모드 (조건 일제 타격)</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-sans leading-relaxed">
+                    조건을 만족하는 모든 유령들을 한번에 소탕하세요!
+                  </p>
+ 
+                  <div className="flex flex-col gap-2.5 mt-2.5">
+                    <button 
+                      onClick={() => setMode('condition_practice')}
+                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                        currentMode === 'condition_practice'
+                          ? 'bg-teal-50 border-teal-400 text-teal-850 font-bold shadow-md ring-2 ring-teal-200'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650'
+                      }`}
+                    >
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-black">🌱 소탕 연습 모드</span>
+                      </div>
+                      {currentMode === 'condition_practice' && <span className="text-[10px] bg-teal-200 text-teal-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                    </button>
+ 
+                    <button 
+                      onClick={() => setMode('condition_survival')}
+                      className={`py-3 px-4 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex justify-between items-center ${
+                        currentMode === 'condition_survival'
+                          ? 'bg-rose-50 border-rose-300 text-rose-850 font-bold shadow-md ring-2 ring-rose-200'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650'
+                      }`}
+                    >
+                      <div className="flex flex-col text-left">
+                        <span className="text-sm font-black">⏱️ 소탕 서바이벌 모드</span>
+                      </div>
+                      {currentMode === 'condition_survival' && <span className="text-[10px] bg-rose-200 text-rose-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                    </button>
+                  </div>
+                </div>
+ 
+                <div className="w-full">
+                  {(currentMode === 'condition_practice' || currentMode === 'condition_survival') ? (
+                    <button
+                      onClick={handleStartGame}
+                      className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-jua text-base rounded-xl cursor-pointer shadow-lg hover:scale-[1.01] transition-all text-center border-b-4 border-emerald-800 flex items-center justify-center gap-2"
+                    >
+                      <Play className="w-4 h-4 fill-white animate-pulse" />
+                      <span>소탕 도전 시작!</span>
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3.5 bg-slate-100 text-slate-400 font-jua text-sm rounded-xl border-b-4 border-slate-300 flex flex-col items-center justify-center gap-0.5 opacity-90 cursor-not-allowed"
+                    >
+                      <span>소탕 도전 시작!</span>
+                      <span className="text-[10px] font-sans text-slate-400">위의 소탕 연습/서바이벌 모드를 선택하세요.</span>
+                    </button>
+                  )}
+                </div>
+              </div>
 
-            {/* Start Button */}
-            <button
-              onClick={handleStartGame}
-              className="w-full py-4 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-jua text-lg rounded-2xl cursor-pointer shadow-lg hover:scale-[1.01] transition-all text-center border-b-4 border-emerald-800 flex items-center justify-center gap-2"
-            >
-              <Play className="w-5 h-5 fill-white animate-pulse" />
-              <span>게임 시작</span>
-            </button>
+            </div>
           </div>
         ) : (
           /* Active Gameplay screen layout Split */
@@ -431,6 +998,12 @@ export default function App() {
                 currentMode={currentMode}
                 gameStatus={gameStatus}
                 showCursorLabel={showCursorLabel}
+                
+                // 조건 맞추기 모드용 Props 추가
+                conditionPoints={conditionPoints}
+                onTogglePoint={handleTogglePoint}
+                conditionGameState={conditionGameState}
+                activeExplosions={activeExplosions}
               />
             </div>
 
@@ -486,24 +1059,49 @@ export default function App() {
                 setShowCursorLabel={setShowCursorLabel}
                 inputError={inputError}
                 setInputError={setInputError}
+ 
+                // 조건 맞추기 모드용 Props 추가
+                currentMission={currentMission}
+                conditionPoints={conditionPoints}
+                conditionGameState={conditionGameState}
+                onConditionFire={handleConditionFire}
+                onConditionNext={handleConditionNext}
+                onConditionSkip={handleConditionSkip}
+                conditionTimeLeft={conditionTimeLeft}
               />
               
             </div>
-
+ 
           </div>
         )}
-
+ 
         {/* Informative footer */}
         <footer className="text-center text-xs text-teal-800 mt-2 font-medium bg-teal-50 inline-block mx-auto px-4 py-2 rounded-full border border-teal-100 shadow-inner">
           © 2026 석관중학교 JSI
         </footer>
       </div>
-
+ 
       {/* Game Over modal overlay */}
       <GameOverModal
         isOpen={gameStatus === 'gameover'}
-        score={currentMode === 'easy' ? scores.easyScore : scores.normalScore}
-        highScore={currentMode === 'easy' ? scores.easyHighScore : scores.normalHighScore}
+        score={
+          currentMode === 'easy' 
+            ? scores.easyScore 
+            : currentMode === 'normal' 
+              ? scores.normalScore 
+              : currentMode === 'condition_survival'
+                ? scores.conditionSurvivalScore
+                : scores.conditionPracticeScore
+        }
+        highScore={
+          currentMode === 'easy' 
+            ? scores.easyHighScore 
+            : currentMode === 'normal' 
+              ? scores.normalHighScore 
+              : currentMode === 'condition_survival'
+                ? scores.conditionSurvivalHighScore
+                : scores.conditionPracticeHighScore
+        }
         currentMode={currentMode}
         onRestart={handleStartGame}
       />

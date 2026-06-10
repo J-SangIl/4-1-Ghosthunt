@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Ghost, BulletEffect, Coordinate, GameMode, GameStatus } from '../types';
+import { Ghost, BulletEffect, Coordinate, GameMode, GameStatus, ConditionTargetPoint } from '../types';
 
 interface CoordinatePlaneProps {
   ghosts: Ghost[];
@@ -8,6 +8,12 @@ interface CoordinatePlaneProps {
   currentMode: GameMode;
   gameStatus: GameStatus;
   showCursorLabel: boolean; // Show mouse coordinate tracking
+  
+  // 조건 맞추기 모드 전용 props
+  conditionPoints?: ConditionTargetPoint[];
+  onTogglePoint?: (id: string) => void;
+  conditionGameState?: 'selecting' | 'firing' | 'revealed' | 'animating';
+  activeExplosions?: Coordinate[];
 }
 
 export default function CoordinatePlane({
@@ -16,6 +22,10 @@ export default function CoordinatePlane({
   currentMode,
   gameStatus,
   showCursorLabel,
+  conditionPoints = [],
+  onTogglePoint,
+  conditionGameState = 'selecting',
+  activeExplosions = [],
 }: CoordinatePlaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverCoord, setHoverCoord] = useState<Coordinate | null>(null);
@@ -35,8 +45,7 @@ export default function CoordinatePlane({
     const rawX = ((relativeX / rect.width) * 20) - 10;
     const rawY = 10 - ((relativeY / rect.height) * 20);
 
-    // Snap based on difficulty (if show decimals, we snap to 0.5, else round to integer)
-    // To make user hovering friendly, let's show nearest 0.5 coordinate
+    // Snap based on difficulty (nearest 0.5 coordinate)
     const snappedX = Math.round(rawX * 2) / 2;
     const snappedY = Math.round(rawY * 2) / 2;
 
@@ -53,6 +62,8 @@ export default function CoordinatePlane({
 
   // Generate ticks for label rendering (All integers from -9 to 9 excluding 0 to prevent cutoff at edges)
   const ticks = [-9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  const isConditionMode = currentMode === 'condition_practice' || currentMode === 'condition_survival';
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -193,8 +204,8 @@ export default function CoordinatePlane({
         {/* Absolute DOM Overlays for Ghosts, Lasers, Trajectories and Explosions */}
         <div className="absolute inset-0 pointer-events-none">
           
-          {/* Firing Laser Stream / Bullet Motion */}
-          {activeBullet && (
+          {/* Firing Laser Stream / Bullet Motion (Only for Easy/Normal modes) */}
+          {!isConditionMode && activeBullet && (
             <>
               {/* Bullet animation */}
               <AnimatePresence>
@@ -243,12 +254,31 @@ export default function CoordinatePlane({
             </>
           )}
 
-          {/* Renders Active Ghosts */}
-          {gameStatus === 'playing' && ghosts.map((ghost) => {
+          {/* Condition Mode: 1단계 미사일 폭발 애니메이션 */}
+          {isConditionMode && activeExplosions.length > 0 && (
+            <>
+              {activeExplosions.map((exp, idx) => (
+                <motion.div
+                  key={`exp-${idx}-${Date.now()}`}
+                  className="absolute -ml-8 -mt-8 flex items-center justify-center z-30"
+                  style={{
+                    left: `${50 + exp.x * 5}%`,
+                    top: `${50 - exp.y * 5}%`
+                  }}
+                  initial={{ scale: 0, opacity: 1 }}
+                  animate={{ scale: [0, 1.8, 1.3], opacity: [1, 1, 0] }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <span className="text-5xl drop-shadow-[0_4px_6px_rgba(239,68,68,0.5)]">💥</span>
+                </motion.div>
+              ))}
+            </>
+          )}
+
+          {/* Renders Active Ghosts (Only for Easy/Normal Modes) */}
+          {gameStatus === 'playing' && !isConditionMode && ghosts.map((ghost) => {
             const leftPercent = 50 + ghost.x * 5;
             const topPercent = 50 - ghost.y * 5;
-
-            // Is the ghost coordinate decimal (has 0.5)? Let's style differently to notice
             const isDecimal = ghost.x % 1 !== 0 || ghost.y % 1 !== 0;
 
             return (
@@ -257,7 +287,6 @@ export default function CoordinatePlane({
                 className="absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 transition-all duration-300"
                 style={{ left: `${leftPercent}%`, top: `${topPercent}%` }}
               >
-                {/* Floating motion ghost (Y-axis bobbing removed to keep center perfectly matching target y) */}
                 <motion.div
                   animate={{ 
                     scale: isDecimal ? [0.95, 1.05, 0.95] : [1, 1.08, 1]
@@ -269,34 +298,26 @@ export default function CoordinatePlane({
                   }}
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
                 >
-                  {/* Highlight aura if decimal targeting is needed */}
                   {isDecimal && (
                     <span className="absolute -inset-1.5 rounded-full bg-rose-500/25 blur-sm animate-ping duration-1000" />
                   )}
 
-                  {/* Pacman Red Ghost SVG: 13px wide, 20.8px tall (vertical ratio adjusted to 0.8x) */}
                   <svg 
                     viewBox="0 0 32 32" 
                     className="w-[13px] h-[20.8px] drop-shadow-[0_2px_4px_rgba(239,68,68,0.4)] select-none"
                     preserveAspectRatio="none"
                   >
-                    {/* Ghost Red Body */}
                     <path 
                       d="M16,2 C8.27,2 2,8.27 2,16 L2,28 L6.5,24 L11,28 L16,24 L21,28 L25.5,24 L30,28 L30,16 C30,8.27 23.73,2 16,2 Z" 
                       fill={isDecimal ? "#f43f5e" : "#ef4444"} 
                     />
-                    {/* Left Eye Whites */}
                     <ellipse cx="11" cy="13" rx="3.5" ry="4.5" fill="#ffffff" />
-                    {/* Left Eye Pupil (looking slightly rightward) */}
                     <circle cx="12" cy="13" r="1.8" fill="#000000" />
-                    {/* Right Eye Whites */}
                     <ellipse cx="21" cy="13" rx="3.5" ry="4.5" fill="#ffffff" />
-                    {/* Right Eye Pupil (looking slightly rightward) */}
                     <circle cx="22" cy="13" r="1.8" fill="#000000" />
                   </svg>
                 </motion.div>
 
-                {/* Normal Mode Survivor Progress/Timer Bar absolute to prevent shifting */}
                 {currentMode === 'normal' && (
                   <div className="absolute top-[48px] left-1/2 -translate-x-1/2 w-12 h-1.5 bg-slate-700/80 rounded-full overflow-hidden shadow-inner border border-slate-600/50">
                     <div 
@@ -315,8 +336,93 @@ export default function CoordinatePlane({
             );
           })}
 
-          {/* Mouse Hover Snapping Visualized */}
-          {hoverCoord && gameStatus === 'playing' && (
+          {/* Renders Condition Matchmaking Mode Target Points */}
+          {gameStatus === 'playing' && isConditionMode && conditionPoints.map((pt) => {
+            const leftPercent = 50 + pt.x * 5;
+            const topPercent = 50 - pt.y * 5;
+
+            // Determine what style or emoji is used based on state
+            const isSelectingPhase = conditionGameState === 'selecting' || conditionGameState === 'firing';
+            const isRevealedPhase = conditionGameState === 'revealed';
+
+            return (
+              <div
+                key={pt.id}
+                onClick={() => onTogglePoint?.(pt.id)}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center transition-all duration-300 pointer-events-auto cursor-pointer ${
+                  isSelectingPhase ? 'w-8 h-8' : 'w-12 h-12'
+                }`}
+                style={{ 
+                  left: `${leftPercent}%`, 
+                  top: `${topPercent}%`,
+                  zIndex: pt.selected ? 15 : 10
+                }}
+              >
+                {isSelectingPhase && (
+                  <motion.div
+                    whileHover={{ scale: 1.25 }}
+                    className={`relative w-3.5 h-3.5 rounded-full flex items-center justify-center border transition-all duration-200 ${
+                      pt.selected
+                        ? 'bg-red-500 border-red-300 shadow-[0_0_12px_#ef4444] scale-110'
+                        : 'bg-teal-600 border-teal-400 shadow-[0_0_5px_rgba(20,184,166,0.3)]'
+                    }`}
+                  >
+                    {/* 점 주변에 빨간 빛 효과 (선택 시에만 붉은 오라 광원 발산) */}
+                    {pt.selected && (
+                      <span className="absolute -inset-2 rounded-full bg-red-500/40 blur-xs animate-pulse pointer-events-none" />
+                    )}
+                  </motion.div>
+                )}
+
+                {isRevealedPhase && (
+                  <motion.div
+                    initial={{ scale: 0.4, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    className="relative w-11 h-11 flex items-center justify-center animate-fade-in"
+                  >
+                    {/* 1. 정답(유령) + 플레이어 선택함 (성공 유령 퇴치) -> 라벨 없음 */}
+                    {pt.isCorrect && pt.selected && (
+                      <div className="relative flex items-center justify-center">
+                        <span className="text-3xl leading-none select-none filter opacity-45 grayscale">👻</span>
+                        <span className="absolute text-2xl leading-none font-black select-none text-red-500 bg-white/70 rounded-full px-1">❌</span>
+                      </div>
+                    )}
+
+                    {/* 2. 정답(유령) + 플레이어 선택 안함 (실패 유령 놓침) -> 라벨 노출 */}
+                    {pt.isCorrect && !pt.selected && (
+                      <motion.div 
+                        animate={{ y: [0, -3, 0], scale: [1, 1.1, 1] }}
+                        transition={{ repeat: Infinity, duration: 1, ease: 'easeInOut' }}
+                        className="relative flex items-center justify-center filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
+                      >
+                        <span className="text-3xl leading-none select-none">👻</span>
+                        <span className="absolute -top-3 text-[8px] whitespace-nowrap bg-rose-600 text-white font-black px-1.5 py-0.5 rounded shadow animate-bounce">놓침! 😜</span>
+                      </motion.div>
+                    )}
+
+                    {/* 3. 오답(사람) + 플레이어 선택함 (실패 시민 타격) -> 라벨 노출 */}
+                    {pt.isCorrect === false && pt.selected && (
+                      <div className="relative flex items-center justify-center">
+                        <span className="text-3xl leading-none select-none filter opacity-35">{pt.civilianEmoji || "🧍"}</span>
+                        <span className="absolute text-2xl leading-none font-black select-none text-rose-600 bg-white/70 rounded-full px-1">😭</span>
+                        <span className="absolute -top-3 text-[8px] whitespace-nowrap bg-rose-700 text-white font-black px-1.5 py-0.5 rounded shadow">오인 타격!</span>
+                      </div>
+                    )}
+
+                    {/* 4. 오답(사람) + 플레이어 선택 안함 (성공 시민 지킴) -> 라벨 없음 */}
+                    {pt.isCorrect === false && !pt.selected && (
+                      <div className="relative flex items-center justify-center row-reverse">
+                        <span className="text-3xl leading-none select-none">{pt.civilianEmoji || "🧍"}</span>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Mouse Hover Snapping Visualized (Only active in selecting phase or normal modes) */}
+          {hoverCoord && gameStatus === 'playing' && (conditionGameState === 'selecting') && (
             <div
               className="absolute w-6 h-6 border-2 border-dashed border-rose-400 rounded-full flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all duration-75"
               style={{ 
