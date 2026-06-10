@@ -68,83 +68,9 @@ export default function GameControls({
   };
 
   return (
-    <div className="w-full bg-white/95 backdrop-blur-md rounded-2xl p-5 border-2 border-teal-200 shadow-md flex flex-col gap-5">
+    <div className="w-full bg-white/95 backdrop-blur-md rounded-2xl p-5 border-2 border-teal-200 shadow-md flex flex-col gap-4">
       
-      {/* 1. Mode selection & Start button section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200/60">
-        
-        {/* Mode Buttons */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-500 font-jua">난이도 모드 선택:</label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMode('easy')}
-              className={`px-3 py-1.5 rounded-lg font-jua text-xs border transition-all flex items-center gap-1 cursor-pointer ${
-                currentMode === 'easy'
-                  ? 'bg-amber-100 border-amber-300 text-amber-800 font-bold shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <span>🌱 연습 모드</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('normal')}
-              className={`px-3 py-1.5 rounded-lg font-jua text-xs border transition-all flex items-center gap-1 cursor-pointer ${
-                currentMode === 'normal'
-                  ? 'bg-indigo-100 border-indigo-300 text-indigo-800 font-bold shadow-sm'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <span>⏱️ 일반 모드 (시간제한)</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Start / Reset Actions */}
-        <div className="flex items-center gap-2">
-          {gameStatus !== 'playing' ? (
-            <button
-              type="button"
-              onClick={onStartGame}
-              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-jua text-sm md:text-base cursor-pointer shadow-md hover:from-teal-600 hover:to-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
-            >
-              <Play className="w-4.5 h-4.5 fill-white" />
-              <span>좌표 평면전 시작!</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onResetGame}
-              className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-jua text-sm cursor-pointer shadow-md flex items-center justify-center gap-1.5 transition-all"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>처음으로</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Interactive study aids (toggles for helpers) */}
-      <div className="flex justify-center border-b border-dashed border-slate-100 pb-3">
-        <label className="flex items-center gap-2.5 p-2 bg-sky-50/50 rounded-lg border border-sky-100/50 cursor-pointer hover:bg-sky-50/90 transition-all w-full justify-center">
-          <input
-            type="checkbox"
-            checked={showCursorLabel}
-            onChange={(e) => setShowCursorLabel(e.target.checked)}
-            className="w-4 h-4 accent-sky-500 rounded cursor-pointer"
-          />
-          <div className="flex flex-col items-center">
-            <span className="text-xs font-bold text-sky-800 font-jua flex items-center gap-1">
-              🎯 마우스로 좌표 확인하기
-            </span>
-            <span className="text-[10px] text-sky-600 font-medium">마우스를 가져다 대면 좌표가 보여요!</span>
-          </div>
-        </label>
-      </div>
-
-      {/* 3. 좌표 입력 공간 with Large Parenthesis ( ) design constraints */}
+      {/* 1. 좌표 입력 공간 with Large Parenthesis ( ) design constraints */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <div className="flex flex-col items-center justify-center py-2 bg-teal-50/40 rounded-2xl border border-teal-100 p-2 relative">
           
@@ -186,11 +112,11 @@ export default function GameControls({
           )}
         </div>
 
-        {/* 4. Action Fire Button */}
+        {/* 2. Action Fire Button */}
         <button
           type="submit"
           disabled={gameStatus !== 'playing' || !inputValue.trim()}
-          className="w-full mt-1.5 py-3.5 sm:py-4 bg-rose-500 hover:bg-rose-600 text-white disabled:bg-slate-300 disabled:text-slate-500 text-base md:text-lg font-jua rounded-2xl shadow-lg border-b-4 border-rose-700 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:border-slate-400"
+          className="w-full mt-1 py-3.5 sm:py-4 bg-rose-500 hover:bg-rose-600 text-white disabled:bg-slate-300 disabled:text-slate-500 text-base md:text-lg font-jua rounded-2xl shadow-lg border-b-4 border-rose-700 hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:border-slate-400"
           id="coordinate-fire-button"
         >
           <Crosshair className="w-5 h-5 animate-spin" style={{ animationDuration: '3s' }} />
@@ -205,6 +131,34 @@ export default function GameControls({
           <span className="leading-tight">{inputError}</span>
         </div>
       )}
+
+      {/* 3. Utility Area: Positioned beautifully at the bottom-right */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-slate-100 mt-1">
+        {/* 마우스로 좌표 확인하기 Toggle */}
+        <label className="flex items-center gap-2 px-3 py-2 bg-sky-50 hover:bg-sky-100/70 rounded-xl border border-sky-100 cursor-pointer transition-all justify-center sm:justify-start">
+          <input
+            type="checkbox"
+            checked={showCursorLabel}
+            onChange={(e) => setShowCursorLabel(e.target.checked)}
+            className="w-4 h-4 accent-sky-500 rounded cursor-pointer"
+          />
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold text-sky-800 font-jua">
+              🎯 마우스로 좌표 확인
+            </span>
+          </div>
+        </label>
+
+        {/* 처음으로 Button */}
+        <button
+          type="button"
+          onClick={onResetGame}
+          className="px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 text-white font-jua text-xs cursor-pointer shadow-sm flex items-center justify-center gap-1.5 transition-all"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>처음으로</span>
+        </button>
+      </div>
     </div>
   );
 }

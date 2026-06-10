@@ -7,6 +7,7 @@ interface ScoreBoardProps {
   currentMode: GameMode;
   lives: number;
   missCount: number; // 0, 1, or 2 consecutive misses
+  onSelectMode?: (mode: GameMode) => void;
 }
 
 export default function ScoreBoard({
@@ -14,22 +15,28 @@ export default function ScoreBoard({
   currentMode,
   lives,
   missCount,
+  onSelectMode,
 }: ScoreBoardProps) {
   return (
     <div className="w-full bg-white/90 backdrop-blur-md rounded-2xl p-4 border-2 border-emerald-200 shadow-sm">
       {/* Target stats layer */}
       <div className="grid grid-cols-2 gap-3">
-        {/* Easy Mode Card */}
-        <div className={`p-2.5 rounded-xl border transition-all ${
-          currentMode === 'easy' 
-            ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200' 
-            : 'bg-slate-50/50 border-slate-200 opacity-60'
-        }`}>
+        {/* Easy Mode Card Button */}
+        <button
+          type="button"
+          onClick={() => onSelectMode?.('easy')}
+          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] select-none ${
+            currentMode === 'easy' 
+              ? 'bg-amber-50 border-amber-400 ring-2 ring-amber-200 shadow-sm' 
+              : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-amber-50/20'
+          }`}
+          title="클릭하여 연습 모드로 전환"
+        >
           <div className="flex items-center gap-1 text-[11px] font-bold text-amber-750 mb-1">
             <Trophy className="w-3 h-3" />
             <span className="font-jua">연습 모드</span>
           </div>
-          <div className="flex justify-between items-baseline">
+          <div className="flex justify-between items-baseline w-full">
             <span className="text-lg md:text-xl font-jua text-amber-950">
               {scoreState.easyScore}<span className="text-xs font-sans font-medium text-amber-800 ml-0.5">점</span>
             </span>
@@ -37,19 +44,24 @@ export default function ScoreBoard({
               최고 {scoreState.easyHighScore}점
             </span>
           </div>
-        </div>
+        </button>
 
-        {/* Normal Mode Card */}
-        <div className={`p-2.5 rounded-xl border transition-all ${
-          currentMode === 'normal' 
-            ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-200' 
-            : 'bg-slate-50/50 border-slate-200 opacity-60'
-        }`}>
+        {/* Normal Mode Card Button */}
+        <button
+          type="button"
+          onClick={() => onSelectMode?.('normal')}
+          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] select-none ${
+            currentMode === 'normal' 
+              ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-200 shadow-sm' 
+              : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20'
+          }`}
+          title="클릭하여 일반 모드로 전환"
+        >
           <div className="flex items-center gap-1 text-[11px] font-bold text-indigo-750 mb-1">
             <Flame className="w-3 h-3" />
             <span className="font-jua">일반 모드</span>
           </div>
-          <div className="flex justify-between items-baseline">
+          <div className="flex justify-between items-baseline w-full">
             <span className="text-lg md:text-xl font-jua text-indigo-950">
               {scoreState.normalScore}<span className="text-xs font-sans font-medium text-indigo-850 ml-0.5">점</span>
             </span>
@@ -57,7 +69,7 @@ export default function ScoreBoard({
               최고 {scoreState.normalHighScore}점
             </span>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Middle Line: Health Tracker & Consecutive Miss */}

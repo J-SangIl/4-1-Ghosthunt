@@ -405,7 +405,7 @@ export default function App() {
                     : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
                 }`}
               >
-                <span>⏱️ 일반 시간제한 모드</span>
+                <span>⏱️ 일반 모드(시간 제한)</span>
                 {currentMode === 'normal' && <span className="text-xs bg-indigo-200 text-indigo-900 font-bold px-2.5 py-0.5 rounded-full">선택됨</span>}
               </button>
             </div>
@@ -469,6 +469,7 @@ export default function App() {
                 currentMode={currentMode}
                 lives={lives}
                 missCount={missCount}
+                onSelectMode={setMode}
               />
 
               {/* Firing, inputs & form controls */}
