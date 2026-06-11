@@ -8,12 +8,16 @@ interface CoordinatePlaneProps {
   currentMode: GameMode;
   gameStatus: GameStatus;
   showCursorLabel: boolean; // Show mouse coordinate tracking
+  activeTutorialMode?: 'sniper' | 'sweeper' | null;
   
   // 조건 맞추기 모드 전용 props
   conditionPoints?: ConditionTargetPoint[];
   onTogglePoint?: (id: string) => void;
   conditionGameState?: 'selecting' | 'firing' | 'revealed' | 'animating';
   activeExplosions?: Coordinate[];
+
+  // 튜토리얼용 가이드 라인 좌표
+  tutorialHighlightCoord?: Coordinate | null;
 }
 
 export default function CoordinatePlane({
@@ -22,10 +26,12 @@ export default function CoordinatePlane({
   currentMode,
   gameStatus,
   showCursorLabel,
+  activeTutorialMode = null,
   conditionPoints = [],
   onTogglePoint,
   conditionGameState = 'selecting',
   activeExplosions = [],
+  tutorialHighlightCoord = null,
 }: CoordinatePlaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoverCoord, setHoverCoord] = useState<Coordinate | null>(null);
@@ -199,6 +205,52 @@ export default function CoordinatePlane({
           >
             y
           </text>
+
+          {/* 튜토리얼 점선 가이드라인 */}
+          {tutorialHighlightCoord && (
+            <>
+              {/* 가로 방향 위치에서 해당 가로축 값까지 내리는 보조 점선 */}
+              <line
+                x1={toSvgX(tutorialHighlightCoord.x)}
+                y1={toSvgY(tutorialHighlightCoord.y)}
+                x2={toSvgX(tutorialHighlightCoord.x)}
+                y2={toSvgY(0)}
+                stroke="#f43f5e"
+                strokeWidth={2.5}
+                strokeDasharray="3,3"
+              />
+              {/* 세로 방향 위치에서 해당 세로축 값까지 내리는 보조 점선 */}
+              <line
+                x1={toSvgX(tutorialHighlightCoord.x)}
+                y1={toSvgY(tutorialHighlightCoord.y)}
+                x2={toSvgX(0)}
+                y2={toSvgY(tutorialHighlightCoord.y)}
+                stroke="#f43f5e"
+                strokeWidth={2.5}
+                strokeDasharray="3,3"
+              />
+              {/* 가로축 위의 지시 마커 */}
+              <circle
+                cx={toSvgX(tutorialHighlightCoord.x)}
+                cy={toSvgY(0)}
+                r={6}
+                fill="#f43f5e"
+                stroke="#ffffff"
+                strokeWidth={1.5}
+                className="animate-pulse"
+              />
+              {/* 세로축 위의 지시 마커 */}
+              <circle
+                cx={toSvgX(0)}
+                cy={toSvgY(tutorialHighlightCoord.y)}
+                r={6}
+                fill="#f43f5e"
+                stroke="#ffffff"
+                strokeWidth={1.5}
+                className="animate-pulse"
+              />
+            </>
+          )}
         </svg>
 
         {/* Absolute DOM Overlays for Ghosts, Lasers, Trajectories and Explosions */}
@@ -358,6 +410,14 @@ export default function CoordinatePlane({
                   zIndex: pt.selected ? 15 : 10
                 }}
               >
+                {/* 소탕 튜토리얼에서 선택해 마킹해야 하는 올바른 타겟 유령 점일 때 초록색 원 효과 */}
+                {activeTutorialMode === 'sweeper' && pt.isCorrect && isSelectingPhase && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                    <span className="absolute w-12 h-12 rounded-full border-4 border-emerald-500 bg-emerald-500/20 animate-ping opacity-80" />
+                    <span className="absolute w-6 h-6 rounded-full border-2 border-emerald-400 bg-emerald-400/30" />
+                  </div>
+                )}
+
                 {isSelectingPhase && (
                   <motion.div
                     whileHover={{ scale: 1.25 }}

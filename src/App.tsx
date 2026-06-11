@@ -152,6 +152,13 @@ const generateMission = (score: number): MissionCondition => {
 };
 
 export default function App() {
+  // 튜토리얼 진행 상태
+  const [activeTutorialMode, setActiveTutorialMode] = useState<'sniper' | 'sweeper' | null>(null);
+  const [tutorialStep, setTutorialStep] = useState<number>(0);
+  const [sniperTutorialCompleted, setSniperTutorialCompleted] = useState<boolean>(false);
+  const [sweeperTutorialCompleted, setSweeperTutorialCompleted] = useState<boolean>(false);
+  const [sweeperStepSuccess, setSweeperStepSuccess] = useState<boolean>(false);
+
   // Game state
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
   const [currentMode, setCurrentMode] = useState<GameMode>('easy');
@@ -164,6 +171,10 @@ export default function App() {
       setShowConfirmModal(true);
     } else {
       setCurrentMode(mode);
+      // 서바이벌 모드로 전환하면 튜토리얼이 자동 종료되게 함
+      if (mode === 'normal' || mode === 'condition_survival') {
+        setActiveTutorialMode(null);
+      }
     }
   };
 
@@ -181,6 +192,11 @@ export default function App() {
     setCurrentMode(newMode);
     setShowConfirmModal(false);
     setPendingMode(null);
+
+    // 서바이벌 모드로 전환하면 튜토리얼이 자동 종료되게 함
+    if (newMode === 'normal' || newMode === 'condition_survival') {
+      setActiveTutorialMode(null);
+    }
 
     // 3. Set up the state as if starting a new game in that new mode
     setLives(3);
@@ -279,6 +295,12 @@ export default function App() {
       const conditionHigh = localStorage.getItem('coord_game_condition_high') || '0';
       const condPracticeHigh = localStorage.getItem('coord_game_cond_practice_high') || '0';
       const condSurvivalHigh = localStorage.getItem('coord_game_cond_survival_high') || '0';
+      
+      const sniperDone = localStorage.getItem('coord_game_sniper_tutorial_completed') === 'true';
+      const sweeperDone = localStorage.getItem('coord_game_sweeper_tutorial_completed') === 'true';
+      setSniperTutorialCompleted(sniperDone);
+      setSweeperTutorialCompleted(sweeperDone);
+
       setScores(prev => ({
         ...prev,
         easyHighScore: parseInt(easyHigh, 10),
@@ -509,6 +531,146 @@ export default function App() {
     setConditionPoints(shuffledPoints);
   };
 
+  // 튜토리얼 기동 및 설정 도구들
+  const startSniperTutorial = () => {
+    setActiveTutorialMode('sniper');
+    setGhosts([]);
+    setConditionPoints([]);
+    setCurrentMission(null);
+    setupSniperTutorialStep(0); // 0단계는 안내문 보기
+  };
+
+  const startSweeperTutorial = () => {
+    setActiveTutorialMode('sweeper');
+    setGhosts([]);
+    setConditionPoints([]);
+    setCurrentMission(null);
+    setupSweeperTutorialStep(0); // 0단계는 안내문 보기
+  };
+
+  const handleStartSniperTutorial = () => {
+    setGameStatus('playing');
+    setMode('easy');
+    startSniperTutorial();
+  };
+
+  const handleStartSweeperTutorial = () => {
+    setGameStatus('playing');
+    setMode('condition_practice');
+    startSweeperTutorial();
+  };
+
+  const setupSniperTutorialStep = (step: number) => {
+    setTutorialStep(step);
+    setInputValue('');
+    setInputError(null);
+    setHitMessage(null);
+    setActiveBullet(null);
+    
+    if (step === 1) {
+      const g: Ghost = {
+        id: `tutorial-ghost-1`,
+        x: 5,
+        y: 4,
+        timeLeft: 9999,
+        maxTime: 9999,
+        spawnedAt: Date.now(),
+      };
+      setGhosts([g]);
+    } else if (step === 2) {
+      const g: Ghost = {
+        id: `tutorial-ghost-2`,
+        x: -3,
+        y: 2,
+        timeLeft: 9999,
+        maxTime: 9999,
+        spawnedAt: Date.now(),
+      };
+      setGhosts([g]);
+    } else if (step === 3) {
+      const g: Ghost = {
+        id: `tutorial-ghost-3`,
+        x: 5,
+        y: -2,
+        timeLeft: 9999,
+        maxTime: 9999,
+        spawnedAt: Date.now(),
+      };
+      setGhosts([g]);
+    } else {
+      setGhosts([]);
+    }
+  };
+
+  const setupSweeperTutorialStep = (step: number) => {
+    setTutorialStep(step);
+    setInputValue('');
+    setInputError(null);
+    setHitMessage(null);
+    setConditionGameState('selecting');
+    setActiveExplosions([]);
+    setSweeperStepSuccess(false);
+
+    if (step === 1) {
+      // 1-1. Mission: 좌표가 (3, -2)인 유령
+      setCurrentMission({
+        text: "좌표가 (3, -2)인 점",
+        check: (x, y) => x === 3 && y === -2
+      });
+      setConditionPoints([
+        { id: 'sw-1-1', x: 3, y: -2, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-1-2', x: -1, y: 5, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+        { id: 'sw-1-3', x: 4, y: 4, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♂️" },
+        { id: 'sw-1-4', x: -5, y: -3, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♀️" },
+        { id: 'sw-1-5', x: 2, y: 1, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+      ]);
+    } else if (step === 2) {
+      // 1-2. Mission: 좌표가 (-4, 3)인 유령
+      setCurrentMission({
+        text: "좌표가 (-4, 3)인 점",
+        check: (x, y) => x === -4 && y === 3
+      });
+      setConditionPoints([
+        { id: 'sw-2-1', x: -4, y: 3, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-2-2', x: 5, y: 2, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♀️" },
+        { id: 'sw-2-3', x: -2, y: -2, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+        { id: 'sw-2-4', x: 1, y: -5, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♂️" },
+        { id: 'sw-2-5', x: 3, y: 3, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+      ]);
+    } else if (step === 3) {
+      // 1-3. Mission: Y축 위에 배치된 모든 유령
+      setCurrentMission({
+        text: "y축 위에 있는 점",
+        check: (x, y) => x === 0 && y !== 0
+      });
+      setConditionPoints([
+        { id: 'sw-3-1', x: 0, y: 5, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-3-2', x: 0, y: -3, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-3-3', x: 0, y: 1, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-3-4', x: 4, y: 2, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+        { id: 'sw-3-5', x: -3, y: -4, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♂️" },
+        { id: 'sw-3-6', x: 3, y: -2, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♀️" },
+      ]);
+    } else if (step === 4) {
+      // 1-4. Mission: 제2사분면 위에 숨어있는 모든 유령
+      setCurrentMission({
+        text: "제2사분면 위에 있는 점",
+        check: (x, y) => x < 0 && y > 0
+      });
+      setConditionPoints([
+        { id: 'sw-4-1', x: -5, y: 4, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-4-2', x: -2, y: 2, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-4-3', x: -4, y: 5, isCorrect: true, selected: false, isGhost: true },
+        { id: 'sw-4-4', x: 3, y: 3, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍" },
+        { id: 'sw-4-5', x: -4, y: -2, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♂️" },
+        { id: 'sw-4-6', x: 2, y: -4, isCorrect: false, selected: false, isGhost: false, civilianEmoji: "🧍‍♀️" },
+      ]);
+    } else {
+      setConditionPoints([]);
+      setCurrentMission(null);
+    }
+  };
+
   // Spawns a new ghost at valid target coordinates (Easy/Normal Modes)
   const spawnNewGhost = (scoreForDiff: number) => {
     const x = getRandomCoordinateValue(scoreForDiff);
@@ -552,26 +714,36 @@ export default function App() {
     
     const isConditionMode = currentMode === 'condition_practice' || currentMode === 'condition_survival';
     if (isConditionMode) {
-      setTimeout(() => {
-        setupConditionRound(0);
-      }, 50);
+      if (currentMode === 'condition_practice' && !sweeperTutorialCompleted) {
+        startSweeperTutorial();
+      } else {
+        setActiveTutorialMode(null);
+        setTimeout(() => {
+          setupConditionRound(0);
+        }, 50);
+      }
     } else {
-      setTimeout(() => {
-        const initialScore = 0;
-        const x = getRandomCoordinateValue(initialScore);
-        const y = getRandomCoordinateValue(initialScore);
-        const maxTime = 12;
+      if (currentMode === 'easy' && !sniperTutorialCompleted) {
+        startSniperTutorial();
+      } else {
+        setActiveTutorialMode(null);
+        setTimeout(() => {
+          const initialScore = 0;
+          const x = getRandomCoordinateValue(initialScore);
+          const y = getRandomCoordinateValue(initialScore);
+          const maxTime = 12;
 
-        const newGhost: Ghost = {
-          id: `ghost-${Date.now()}`,
-          x,
-          y,
-          timeLeft: maxTime,
-          maxTime,
-          spawnedAt: Date.now(),
-        };
-        setGhosts([newGhost]);
-      }, 50);
+          const newGhost: Ghost = {
+            id: `ghost-${Date.now()}`,
+            x,
+            y,
+            timeLeft: maxTime,
+            maxTime,
+            spawnedAt: Date.now(),
+          };
+          setGhosts([newGhost]);
+        }, 50);
+      }
     }
   };
 
@@ -658,7 +830,11 @@ export default function App() {
     const parts = cleaned.split(',');
 
     if (parts.length !== 2) {
-      setInputError('X와 Y 좌표를 쉼표(,)로 구분해 꼭 두 자리 입력해줘! 예) 3, -4');
+      if (activeTutorialMode === 'sniper') {
+        setInputError('가로 방향 위치와 세로 방향 위치를 쉼표(,)로 구분해 두 자리 입력해 보세요! 예) 3, -4');
+      } else {
+        setInputError('X와 Y 좌표를 쉼표(,)로 구분해 꼭 두 자리 입력해줘! 예) 3, -4');
+      }
       return;
     }
 
@@ -666,12 +842,20 @@ export default function App() {
     const y = parseFloat(parts[1]);
 
     if (isNaN(x) || isNaN(y)) {
-      setInputError('올바른 정수 또는 소수를 입력해줘! 예) 2.5, -4');
+      if (activeTutorialMode === 'sniper') {
+        setInputError('올바른 정수 또는 소수를 입력해 보세요! 예) 5, 4');
+      } else {
+        setInputError('올바른 정수 또는 소수를 입력해줘! 예) 2.5, -4');
+      }
       return;
     }
 
     if (x < -10 || x > 10 || y < -10 || y > 10) {
-      setInputError('좌표 범위를 초과했어! X와 Y 숫자는 -10에서 10 사이여야 해.');
+      if (activeTutorialMode === 'sniper') {
+        setInputError('조준 범위를 초과했습니다! 숫자는 -10에서 10 사이여야 합니다.');
+      } else {
+        setInputError('좌표 범위를 초과했어! X와 Y 숫자는 -10에서 10 사이여야 해.');
+      }
       return;
     }
 
@@ -703,6 +887,67 @@ export default function App() {
       setActiveBullet(prev => prev ? { ...prev, status: 'exploding' } : null);
       setScreenShake(true);
       setTimeout(() => setScreenShake(false), 400);
+
+      // 튜토리얼 중 저격 동작 검출
+      if (activeTutorialMode === 'sniper') {
+        if (isMatched) {
+          if (tutorialStep === 1) {
+            setHitMessage({
+              text: "🎯 대성공! 가로 방향 5, 세로 방향 4 지점에 잠복해 있던 표적을 완벽하게 관통 사격했습니다! (잠시 후 2단계 훈련으로 이동합니다)",
+              type: 'success'
+            });
+            setTimeout(() => {
+              setupSniperTutorialStep(2);
+            }, 1800);
+          } else if (tutorialStep === 2) {
+            setHitMessage({
+              text: "🎯 정밀 타격 명중! 왼쪽 가로 -3, 위쪽 세로 2 지점인 (-3, 2) 위치의 표적을 제압했습니다! (잠시 후 3단계 훈련으로 이동합니다)",
+              type: 'success'
+            });
+            setTimeout(() => {
+              setupSniperTutorialStep(3);
+            }, 1800);
+          } else if (tutorialStep === 3) {
+            setHitMessage({
+              text: "🎯 조준 훈련 최종 완수! 오른쪽 가로 5, 아래쪽 세로 -2 범위인 (5, -2) 지점까지 멋지게 소탕에 성공했습니다! (사격 훈련 종료)",
+              type: 'success'
+            });
+            setTimeout(() => {
+              setSniperTutorialCompleted(true);
+              localStorage.setItem('coord_game_sniper_tutorial_completed', 'true');
+              setActiveTutorialMode(null);
+              setHitMessage({
+                text: "🎉 축하합니다! 이제 실전 서바이벌 저격 모드에 참여하실 자격을 획득하셨습니다!",
+                type: 'success'
+              });
+              setTimeout(() => {
+                const initialScore = 0;
+                const x = getRandomCoordinateValue(initialScore);
+                const y = getRandomCoordinateValue(initialScore);
+                const maxTime = 12;
+                setGhosts([{
+                  id: `ghost-${Date.now()}`,
+                  x,
+                  y,
+                  timeLeft: maxTime,
+                  maxTime,
+                  spawnedAt: Date.now(),
+                }]);
+              }, 1200);
+            }, 1800);
+          }
+        } else {
+          // Missed in tutorial (no lives penalty or score modifications)
+          if (tutorialStep === 1) {
+            setInputError("조준선이 비껴갔습니다! 중심에서 가로 방향 오른쪽으로 5칸, 세로 방향 위쪽으로 4칸 위치이므로 `5, 4`를 정직하게 채워 보세요!");
+          } else if (tutorialStep === 2) {
+            setInputError("조준선이 비껴갔습니다! 중심에서 가로 방향 왼쪽으로 3칸(-3), 세로 방향 위쪽으로 2칸(2) 위치이므로 `-3, 2`를 적어 보세요!");
+          } else if (tutorialStep === 3) {
+            setInputError("조준선이 비껴갔습니다! 중심에서 가로 방향 오른쪽으로 5칸, 세로 방향 아래쪽으로 2칸(-2) 위치이므로 `5, -2`를 마력 사격해 보세요!");
+          }
+        }
+        return;
+      }
 
       if (isMatched) {
         // Strike HIT!
@@ -842,6 +1087,48 @@ export default function App() {
       const hasInjuredCivilian = conditionPoints.some(p => !p.isCorrect && p.selected);
       const isPerfect = !hasMissedGhost && !hasInjuredCivilian;
 
+       // 튜토리얼 소탕 조건 특수 체크
+      if (activeTutorialMode === 'sweeper') {
+        if (isPerfect) {
+          setSweeperStepSuccess(true);
+          if (tutorialStep === 1) {
+            setHitMessage({
+              text: "🎯 정밀 폭격 완료! 지정한 (3, -2) 지점의 표적 유령을 안전하게 격치했습니다! [훈련 속개 ➡️]",
+              type: 'success'
+            });
+          } else if (tutorialStep === 2) {
+            setHitMessage({
+              text: "🎯 완벽한 타격! 지정한 (-4, 3) 지점의 잠복한 유령을 정확하게 제거했습니다! [훈련 속개 ➡️]",
+              type: 'success'
+            });
+          } else if (tutorialStep === 3) {
+            setHitMessage({
+              text: "🎯 일괄 처리 완벽! 세로 실선형 축(y축) 상에 놓인 유령 세 마리를 동시에 단숨에 폭격했습니다! [훈련 속개 ➡️]",
+              type: 'success'
+            });
+          } else if (tutorialStep === 4) {
+            setHitMessage({
+              text: "🎯 최종 미션 성공! 제2사분면(좌상단 구역) 영역 안에 숨어있던 모든 교란 유령들을 완전하게 섬멸했습니다!",
+              type: 'success'
+            });
+          }
+        } else {
+          setSweeperStepSuccess(false);
+          let clue = "💥 전술 오인! 조건에 상응하는 붉은 점들만 안전하게 지정해야 합니다. ";
+          if (tutorialStep === 1) {
+            clue += "오른쪽으로 3칸, 아래로 2칸 지점인 (3, -2) 좌표의 붉은 점을 마킹해 미사일을 발사해 보세요.";
+          } else if (tutorialStep === 2) {
+            clue += "왼쪽으로 4칸, 위로 3칸 지점인 (-4, 3) 좌표의 붉은 점만 골라 보세요.";
+          } else if (tutorialStep === 3) {
+            clue += "가로 위치가 0인 세로선 축(y축) 상에 가로질러 정렬한 세 붉은 유령 점을 빼놓지 말고 동시 선택해 보세요.";
+          } else if (tutorialStep === 4) {
+            clue += "제2사분면(중심축 기준 왼쪽 위 영역) 안에 들어서 있는 세 붉은 유령 마크를 한 마리도 빠짐없이 체크해 주세요!";
+          }
+          setHitMessage({ text: clue, type: 'warn' });
+        }
+        return;
+      }
+
       if (isPerfect) {
         setHitMessage({
           text: "🎯 완벽해요! 모든 유령을 처치하고 시민들을 구했습니다! (+1점)",
@@ -888,6 +1175,30 @@ export default function App() {
 
   // Move to next mission or end the game based on the manual Next button click
   const handleConditionNext = () => {
+    if (activeTutorialMode === 'sweeper') {
+      if (sweeperStepSuccess) {
+        if (tutorialStep < 4) {
+          setupSweeperTutorialStep(tutorialStep + 1);
+        } else {
+          // Complete sweeper tutorial
+          setSweeperTutorialCompleted(true);
+          localStorage.setItem('coord_game_sweeper_tutorial_completed', 'true');
+          setActiveTutorialMode(null);
+          setHitMessage({
+            text: "🎉 축하합니다! 모든 소탕 조작 훈련 과정을 전면 이수하셨습니다. 이제 서바이벌 모드가 완전히 해제되었습니다!",
+            type: 'success'
+          });
+          setTimeout(() => {
+            setupConditionRound(0);
+          }, 800);
+        }
+      } else {
+        // Retry the current step
+        setupSweeperTutorialStep(tutorialStep);
+      }
+      return;
+    }
+
     if (currentMode === 'condition_survival') {
       if (lives <= 0) {
         setGameStatus('gameover');
@@ -972,20 +1283,34 @@ export default function App() {
                     </button>
                     
                     <button 
-                      onClick={() => setMode('normal')}
-                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
-                        currentMode === 'normal'
-                          ? 'bg-indigo-50 border-indigo-400 text-indigo-800 font-bold shadow-md ring-2 ring-indigo-200'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600'
+                      disabled={!sniperTutorialCompleted}
+                      onClick={() => {
+                        if (sniperTutorialCompleted) {
+                          setMode('normal');
+                        }
+                      }}
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center flex flex-col justify-center items-center gap-1 min-h-[74px] ${
+                        !sniperTutorialCompleted
+                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-75'
+                          : currentMode === 'normal'
+                            ? 'bg-indigo-50 border-indigo-400 text-indigo-800 font-bold shadow-md ring-2 ring-indigo-200 cursor-pointer'
+                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 cursor-pointer'
                       }`}
+                      title={!sniperTutorialCompleted ? "저격 연습 모드 튜토리얼을 완료해 주세요!" : ""}
                     >
-                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">⏱️ 저격 서바이벌</span>
-                      {currentMode === 'normal' && <span className="text-[9px] bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">
+                        {!sniperTutorialCompleted ? "🔒 저격 서바이벌" : "⏱️ 저격 서바이벌"}
+                      </span>
+                      {!sniperTutorialCompleted ? (
+                        <span className="text-[8px] bg-slate-200 text-slate-500 font-bold px-1.5 py-0.5 rounded-full font-sans">훈련 필요</span>
+                      ) : (
+                        currentMode === 'normal' && <span className="text-[9px] bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-full font-sans">선택됨</span>
+                      )}
                     </button>
                   </div>
                 </div>
  
-                <div className="w-full">
+                <div className="w-full flex flex-col gap-2">
                   {(currentMode === 'easy' || currentMode === 'normal') ? (
                     <button
                       onClick={handleStartGame}
@@ -1003,6 +1328,13 @@ export default function App() {
                       <span className="text-[10px] font-sans text-slate-400">위의 저격 연습/서바이벌 모드를 선택하세요.</span>
                     </button>
                   )}
+
+                  <button
+                    onClick={handleStartSniperTutorial}
+                    className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-805 border border-amber-300 font-jua text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-[0.98]"
+                  >
+                    <span>🔄 저격 조준 훈련(튜토리얼) 다시 진행</span>
+                  </button>
                 </div>
               </div>
  
@@ -1037,20 +1369,34 @@ export default function App() {
                     </button>
  
                     <button 
-                      onClick={() => setMode('condition_survival')}
-                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center cursor-pointer flex flex-col justify-center items-center gap-1 min-h-[74px] ${
-                        currentMode === 'condition_survival'
-                          ? 'bg-rose-50 border-rose-300 text-rose-850 font-bold shadow-md ring-2 ring-rose-200'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650'
+                      disabled={!sweeperTutorialCompleted}
+                      onClick={() => {
+                        if (sweeperTutorialCompleted) {
+                          setMode('condition_survival');
+                        }
+                      }}
+                      className={`py-3 px-2 rounded-xl border-2 font-jua text-sm transition-all text-center flex flex-col justify-center items-center gap-1 min-h-[74px] ${
+                        !sweeperTutorialCompleted
+                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-75'
+                          : currentMode === 'condition_survival'
+                            ? 'bg-rose-50 border-rose-300 text-rose-850 font-bold shadow-md ring-2 ring-rose-200 cursor-pointer'
+                            : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-650 cursor-pointer'
                       }`}
+                      title={!sweeperTutorialCompleted ? "소탕 연습 모드 튜토리얼을 완료해 주세요!" : ""}
                     >
-                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">⏱️ 소탕 서바이벌</span>
-                      {currentMode === 'condition_survival' && <span className="text-[9px] bg-rose-200 text-rose-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>}
+                      <span className="text-xs sm:text-sm font-black whitespace-nowrap">
+                        {!sweeperTutorialCompleted ? "🔒 소탕 서바이벌" : "⏱️ 소탕 서바이벌"}
+                      </span>
+                      {!sweeperTutorialCompleted ? (
+                        <span className="text-[8px] bg-slate-200 text-slate-500 font-bold px-1.5 py-0.5 rounded-full font-sans">훈련 필요</span>
+                      ) : (
+                        currentMode === 'condition_survival' && <span className="text-[9px] bg-rose-200 text-rose-950 font-bold px-2.5 py-0.5 rounded-full font-sans">선택됨</span>
+                      )}
                     </button>
                   </div>
                 </div>
  
-                <div className="w-full">
+                <div className="w-full flex flex-col gap-2">
                   {(currentMode === 'condition_practice' || currentMode === 'condition_survival') ? (
                     <button
                       onClick={handleStartGame}
@@ -1068,6 +1414,13 @@ export default function App() {
                       <span className="text-[10px] font-sans text-slate-400">위의 소탕 연습/서바이벌 모드를 선택하세요.</span>
                     </button>
                   )}
+
+                  <button
+                    onClick={handleStartSweeperTutorial}
+                    className="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 font-jua text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-[0.98]"
+                  >
+                    <span>🔄 소탕 훈련(튜토리얼) 다시 진행</span>
+                  </button>
                 </div>
               </div>
 
@@ -1085,12 +1438,20 @@ export default function App() {
                 currentMode={currentMode}
                 gameStatus={gameStatus}
                 showCursorLabel={showCursorLabel}
+                activeTutorialMode={activeTutorialMode}
                 
                 // 조건 맞추기 모드용 Props 추가
                 conditionPoints={conditionPoints}
                 onTogglePoint={handleTogglePoint}
                 conditionGameState={conditionGameState}
                 activeExplosions={activeExplosions}
+
+                // 튜토리얼 점선 가이드 좌표 추가
+                tutorialHighlightCoord={
+                  activeTutorialMode === 'sniper' && tutorialStep > 0 && ghosts.length > 0
+                    ? { x: ghosts[0].x, y: ghosts[0].y }
+                    : null
+                }
               />
             </div>
 
@@ -1102,7 +1463,7 @@ export default function App() {
                 <motion.div 
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-3 rounded-xl border font-jua text-xs sm:text-sm text-center flex items-center justify-center gap-2 shadow-sm ${
+                  className={`p-3 rounded-xl border font-jua text-xs sm:text-sm text-center flex flex-wrap items-center justify-center gap-2 shadow-sm ${
                     hitMessage.type === 'success' 
                       ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
                       : hitMessage.type === 'warn'
@@ -1114,6 +1475,7 @@ export default function App() {
                     {hitMessage.type === 'success' ? '🔮' : hitMessage.type === 'warn' ? '🚨' : '💨'}
                   </span>
                   <span className="leading-tight">{hitMessage.text}</span>
+                  
                   <button 
                     onClick={() => setHitMessage(null)} 
                     className="text-xs ml-auto underline text-slate-500 opacity-70 hover:opacity-100"
@@ -1130,6 +1492,8 @@ export default function App() {
                 lives={lives}
                 missCount={missCount}
                 onSelectMode={setMode}
+                sniperTutorialCompleted={sniperTutorialCompleted}
+                sweeperTutorialCompleted={sweeperTutorialCompleted}
               />
 
               {/* Firing, inputs & form controls */}
@@ -1155,6 +1519,13 @@ export default function App() {
                 onConditionNext={handleConditionNext}
                 onConditionSkip={handleConditionSkip}
                 conditionTimeLeft={conditionTimeLeft}
+
+                // 튜토리얼용 Props 추가
+                activeTutorialMode={activeTutorialMode}
+                tutorialStep={tutorialStep}
+                sweeperStepSuccess={sweeperStepSuccess}
+                onSetupSniperStep={setupSniperTutorialStep}
+                onSetupSweeperStep={setupSweeperTutorialStep}
               />
               
             </div>

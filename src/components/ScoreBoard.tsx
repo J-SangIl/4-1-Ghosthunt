@@ -8,6 +8,8 @@ interface ScoreBoardProps {
   lives: number;
   missCount: number; // 0, 1, or 2 consecutive misses
   onSelectMode?: (mode: GameMode) => void;
+  sniperTutorialCompleted?: boolean;
+  sweeperTutorialCompleted?: boolean;
 }
 
 export default function ScoreBoard({
@@ -16,6 +18,8 @@ export default function ScoreBoard({
   lives,
   missCount,
   onSelectMode,
+  sniperTutorialCompleted = false,
+  sweeperTutorialCompleted = false,
 }: ScoreBoardProps) {
   const isCondition = currentMode === 'condition_practice' || currentMode === 'condition_survival';
 
@@ -53,24 +57,33 @@ export default function ScoreBoard({
             {/* 저격 서바이벌 모드 Card Button */}
             <button
               type="button"
-              onClick={() => onSelectMode?.('normal')}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] select-none flex flex-col justify-between h-full ${
-                currentMode === 'normal' 
-                  ? 'bg-indigo-50 border-indigo-350 ring-2 ring-indigo-200 shadow-sm' 
-                  : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20'
+              disabled={!sniperTutorialCompleted}
+              onClick={() => {
+                if (sniperTutorialCompleted) {
+                  onSelectMode?.('normal');
+                }
+              }}
+              className={`p-2.5 rounded-xl border text-left transition-all select-none flex flex-col justify-between h-full ${
+                !sniperTutorialCompleted
+                  ? 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
+                  : currentMode === 'normal' 
+                    ? 'bg-indigo-50 border-indigo-350 ring-2 ring-indigo-200 shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]' 
+                    : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]'
               }`}
-              title="클릭하여 저격 서바이벌 모드로 전환"
+              title={!sniperTutorialCompleted ? "저격 연습 모드 튜토리얼을 통과해 주세요!" : "클릭하여 저격 서바이벌 모드로 전환"}
             >
               <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-indigo-900 mb-1">
                 <Flame className="w-3 h-3 flex-shrink-0" />
-                <span className="font-jua break-keep">저격 서바이벌</span>
+                <span className="font-jua break-keep">
+                  {!sniperTutorialCompleted ? "🔒 저격 서바이벌" : "저격 서바이벌"}
+                </span>
               </div>
               <div className="flex flex-col w-full">
                 <span className="text-base sm:text-lg font-black font-jua text-indigo-950">
                   {scoreState.normalScore}<span className="text-[10px] font-sans font-medium text-indigo-850 ml-0.5">점</span>
                 </span>
                 <span className="text-[8px] font-mono font-bold text-indigo-600 bg-white px-1 py-0.5 mt-1 rounded border border-indigo-200 text-center">
-                  최고 {scoreState.normalHighScore}점
+                  {!sniperTutorialCompleted ? "훈련 필요" : `최고 ${scoreState.normalHighScore}점`}
                 </span>
               </div>
             </button>
@@ -106,28 +119,37 @@ export default function ScoreBoard({
 
             {/* 소탕 서바이벌 모드 Card Button */}
             <button
-              type="button"
-              onClick={() => onSelectMode?.('condition_survival')}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] select-none flex flex-col justify-between h-full ${
-                currentMode === 'condition_survival' 
-                  ? 'bg-indigo-50 border-indigo-350 ring-2 ring-indigo-200 shadow-sm' 
-                  : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20'
-              }`}
-              title="클릭하여 소탕 서바이벌 모드로 전환"
-            >
-              <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-indigo-900 mb-1">
-                <Flame className="w-3 h-3 flex-shrink-0" />
-                <span className="font-jua break-keep">소탕 서바이벌</span>
-              </div>
-              <div className="flex flex-col w-full">
-                <span className="text-base sm:text-lg font-black font-jua text-indigo-950">
-                  {scoreState.conditionSurvivalScore}<span className="text-[10px] font-sans font-medium text-indigo-850 ml-0.5">점</span>
-                </span>
-                <span className="text-[8px] font-mono font-bold text-indigo-600 bg-white px-1 py-0.5 mt-1 rounded border border-indigo-200 text-center">
-                  최고 {scoreState.conditionSurvivalHighScore}점
-                </span>
-              </div>
-            </button>
+               type="button"
+               disabled={!sweeperTutorialCompleted}
+               onClick={() => {
+                 if (sweeperTutorialCompleted) {
+                   onSelectMode?.('condition_survival');
+                 }
+               }}
+               className={`p-2.5 rounded-xl border text-left transition-all select-none flex flex-col justify-between h-full ${
+                 !sweeperTutorialCompleted
+                   ? 'bg-slate-100 border-slate-200 opacity-50 cursor-not-allowed'
+                   : currentMode === 'condition_survival' 
+                     ? 'bg-indigo-50 border-indigo-350 ring-2 ring-indigo-200 shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]' 
+                     : 'bg-slate-50/50 border-slate-200 opacity-60 hover:opacity-90 hover:bg-indigo-50/20 cursor-pointer hover:scale-[1.02] active:scale-[0.98]'
+               }`}
+               title={!sweeperTutorialCompleted ? "소탕 연습 모드 튜토리얼을 통과해 주세요!" : "클릭하여 소탕 서바이벌 모드로 전환"}
+             >
+               <div className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-indigo-900 mb-1">
+                 <Flame className="w-3 h-3 flex-shrink-0" />
+                 <span className="font-jua break-keep">
+                   {!sweeperTutorialCompleted ? "🔒 소탕 서바이벌" : "소탕 서바이벌"}
+                 </span>
+               </div>
+               <div className="flex flex-col w-full">
+                 <span className="text-base sm:text-lg font-black font-jua text-indigo-950">
+                   {scoreState.conditionSurvivalScore}<span className="text-[10px] font-sans font-medium text-indigo-850 ml-0.5">점</span>
+                 </span>
+                 <span className="text-[8px] font-mono font-bold text-indigo-600 bg-white px-1 py-0.5 mt-1 rounded border border-indigo-200 text-center">
+                   {!sweeperTutorialCompleted ? "훈련 필요" : `최고 ${scoreState.conditionSurvivalHighScore}점`}
+                 </span>
+               </div>
+             </button>
           </>
         )}
       </div>
