@@ -430,7 +430,7 @@ export default function CoordinatePlane({
               }}
             >
               <div className="w-1 h-1 bg-rose-400 rounded-full" />
-              {showCursorLabel && (
+              {showCursorLabel && isConditionMode && (
                 <span className="absolute left-7 bg-indigo-950/95 text-cyan-300 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shadow border border-cyan-800">
                   {`(${hoverCoord.x}, ${hoverCoord.y})`}
                 </span>

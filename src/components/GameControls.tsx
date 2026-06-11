@@ -227,20 +227,22 @@ export default function GameControls({
 
       {/* Utility Area: Positioned beautifully at the bottom-right */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-slate-100 mt-1">
-        {/* 마우스로 좌표 확인하기 Toggle */}
-        <label className="flex items-center gap-2 px-3 py-2 bg-sky-50 hover:bg-sky-100/70 rounded-xl border border-sky-100 cursor-pointer transition-all justify-center sm:justify-start">
-          <input
-            type="checkbox"
-            checked={showCursorLabel}
-            onChange={(e) => setShowCursorLabel(e.target.checked)}
-            className="w-4 h-4 accent-sky-500 rounded cursor-pointer"
-          />
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold text-sky-800 font-jua">
-              🎯 마우스로 좌표 확인
-            </span>
-          </div>
-        </label>
+        {/* 마우스로 좌표 확인하기 Toggle (소탕모드에서만 표시) */}
+        {isConditionMode && (
+          <label className="flex items-center gap-2 px-3 py-2 bg-sky-50 hover:bg-sky-100/70 rounded-xl border border-sky-100 cursor-pointer transition-all justify-center sm:justify-start">
+            <input
+              type="checkbox"
+              checked={showCursorLabel}
+              onChange={(e) => setShowCursorLabel(e.target.checked)}
+              className="w-4 h-4 accent-sky-500 rounded cursor-pointer"
+            />
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-sky-800 font-jua">
+                🎯 마우스로 좌표 확인
+              </span>
+            </div>
+          </label>
+        )}
 
         {/* 처음으로 Button */}
         <button
