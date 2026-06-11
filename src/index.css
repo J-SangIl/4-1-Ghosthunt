@@ -26,3 +26,31 @@
   animation: shake 0.4s ease-in-out;
 }
 
+/* Glowing/Beacon highlight effect for interactive guide */
+@keyframes focus-glowing-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8), 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(245, 158, 11, 0), 0 0 0 24px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.tutorial-focus-glow {
+  position: relative;
+}
+
+.tutorial-focus-glow::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 3px solid #f59e0b; /* Amber-500 */
+  pointer-events: none;
+  animation: focus-glowing-ring 2s cubic-bezier(0.25, 0, 0, 1) infinite;
+  z-index: 10;
+}
+

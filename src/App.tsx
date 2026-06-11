@@ -1528,15 +1528,24 @@ export default function App() {
                 onSetupSweeperStep={setupSweeperTutorialStep}
               />
               
+              {/* Gameplay Screen footer at the bottom of the right side column */}
+              <div className="text-center mt-2 flex justify-center">
+                <footer className="text-center text-xs text-teal-800 font-medium bg-teal-50 px-4 py-2 rounded-full border border-teal-100 shadow-inner w-fit">
+                  © 2026 석관중학교 JSI
+                </footer>
+              </div>
+              
             </div>
  
           </div>
         )}
  
-        {/* Informative footer */}
-        <footer className="text-center text-xs text-teal-800 mt-2 font-medium bg-teal-50 inline-block mx-auto px-4 py-2 rounded-full border border-teal-100 shadow-inner">
-          © 2026 석관중학교 JSI
-        </footer>
+        {/* Informative footer for lobby screen only */}
+        {gameStatus === 'idle' && (
+          <footer className="text-center text-xs text-teal-800 mt-2 font-medium bg-teal-50 inline-block mx-auto px-4 py-2 rounded-full border border-teal-100 shadow-inner">
+            © 2026 석관중학교 JSI
+          </footer>
+        )}
       </div>
  
       {showConfirmModal && pendingMode && (

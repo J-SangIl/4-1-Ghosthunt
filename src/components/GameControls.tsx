@@ -2,6 +2,14 @@ import React, { useRef, useEffect } from 'react';
 import { Play, RotateCcw, AlertCircle, Crosshair, HelpCircle, Flame } from 'lucide-react';
 import { GameMode, GameStatus, MissionCondition, ConditionTargetPoint } from '../types';
 
+function FocusGuideIndicator({ text = "다음 단계는 여기를 집중하면 된다! 📍" }: { text?: string }) {
+  return (
+    <div className="absolute -top-9 left-1/2 -translate-x-1/2 bg-amber-500 text-white font-jua px-2.5 py-1 rounded-lg shadow-lg border border-amber-300 font-bold whitespace-nowrap animate-bounce flex items-center gap-1 z-30 text-[10px] sm:text-xs">
+      <span>{text}</span>
+    </div>
+  );
+}
+
 interface GameControlsProps {
   inputValue: string;
   setInputValue: (val: string) => void;
@@ -158,22 +166,28 @@ export default function GameControls({
 
           <div className="flex gap-2 justify-end pt-1 border-t border-amber-200/60 mt-1">
             {activeTutorialMode === 'sniper' && tutorialStep === 0 && (
-              <button
-                type="button"
-                onClick={() => onSetupSniperStep?.(1)}
-                className="px-3 py-1 font-jua text-[11px] bg-amber-500 hover:bg-amber-600 text-white rounded-lg cursor-pointer transition-all shadow-sm"
-              >
-                훈련 개시하기 🚀
-              </button>
+              <div className="relative inline-block mt-8 mb-1">
+                <FocusGuideIndicator text="다음 단계는 여기를 집중하면 된다! 📍" />
+                <button
+                  type="button"
+                  onClick={() => onSetupSniperStep?.(1)}
+                  className="px-4 py-1.5 font-jua text-[12px] bg-amber-500 hover:bg-amber-600 text-white rounded-lg cursor-pointer transition-all shadow-sm tutorial-focus-glow"
+                >
+                  훈련 개시하기 🚀
+                </button>
+              </div>
             )}
             {activeTutorialMode === 'sweeper' && tutorialStep === 0 && (
-              <button
-                type="button"
-                onClick={() => onSetupSweeperStep?.(1)}
-                className="px-3 py-1 font-jua text-[11px] bg-amber-500 hover:bg-amber-600 text-white rounded-lg cursor-pointer transition-all shadow-sm"
-              >
-                훈련 개시하기 🚀
-              </button>
+              <div className="relative inline-block mt-8 mb-1">
+                <FocusGuideIndicator text="다음 단계는 여기를 집중하면 된다! 📍" />
+                <button
+                  type="button"
+                  onClick={() => onSetupSweeperStep?.(1)}
+                  className="px-4 py-1.5 font-jua text-[12px] bg-amber-500 hover:bg-amber-600 text-white rounded-lg cursor-pointer transition-all shadow-sm tutorial-focus-glow"
+                >
+                  훈련 개시하기 🚀
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -221,34 +235,44 @@ export default function GameControls({
 
           {/* Condition mode action firing button */}
           {conditionGameState === 'revealed' ? (
-            <button
-              onClick={() => onConditionNext?.()}
-              className={`w-full py-3.5 bg-gradient-to-r ${
-                activeTutorialMode === 'sweeper' && !sweeperStepSuccess
-                  ? 'from-rose-500 to-red-650 hover:from-rose-600 hover:to-red-700 border-red-800'
-                  : 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 border-emerald-800'
-              } text-white text-sm sm:text-base font-jua rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-b-4 animate-pulse`}
-            >
-              <span>
-                {activeTutorialMode === 'sweeper' && !sweeperStepSuccess
-                  ? '동일 단계 다시 진행 🔁'
-                  : '다음 작전지로 이동 ➡️'}
-              </span>
-            </button>
-          ) : (
-            <div className="flex flex-col gap-2">
+            <div className={`relative w-full ${activeTutorialMode === 'sweeper' && tutorialStep && tutorialStep > 0 ? 'tutorial-focus-glow rounded-xl mt-8' : ''}`}>
+              {activeTutorialMode === 'sweeper' && tutorialStep && tutorialStep > 0 && (
+                <FocusGuideIndicator text="다음 단계는 여기를 집중하면 된다! 📍" />
+              )}
               <button
-                onClick={() => onConditionFire?.()}
-                disabled={gameStatus !== 'playing' || conditionGameState !== 'selecting' || selectedCount === 0}
-                className="w-full py-3.5 bg-gradient-to-r from-rose-500 to-red-650 hover:from-rose-600 hover:to-red-700 text-white disabled:from-slate-200 disabled:to-slate-350 disabled:text-slate-500 text-sm sm:text-base font-jua rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-b-4 border-red-800 disabled:border-slate-400"
+                onClick={() => onConditionNext?.()}
+                className={`w-full py-3.5 bg-gradient-to-r ${
+                  activeTutorialMode === 'sweeper' && !sweeperStepSuccess
+                    ? 'from-rose-500 to-red-650 hover:from-rose-600 hover:to-red-700 border-red-800'
+                    : 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 border-emerald-800'
+                } text-white text-sm sm:text-base font-jua rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-b-4 animate-pulse`}
               >
-                <Flame className="w-5 h-5 fill-white" />
                 <span>
-                  {conditionGameState === 'firing'
-                    ? '미사일 포격 진행 중... 🚀'
-                    : `미사일 폭격! (${selectedCount}개 선택됨)`}
+                  {activeTutorialMode === 'sweeper' && !sweeperStepSuccess
+                    ? '동일 단계 다시 진행 🔁'
+                    : '다음 작전지로 이동 ➡️'}
                 </span>
               </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className={`relative w-full ${activeTutorialMode === 'sweeper' && tutorialStep && tutorialStep > 0 && conditionGameState === 'selecting' && selectedCount > 0 ? 'tutorial-focus-glow rounded-xl mt-8' : ''}`}>
+                {activeTutorialMode === 'sweeper' && tutorialStep && tutorialStep > 0 && conditionGameState === 'selecting' && selectedCount > 0 && (
+                  <FocusGuideIndicator text="다음 단계는 여기를 집중하면 된다! 📍" />
+                )}
+                <button
+                  onClick={() => onConditionFire?.()}
+                  disabled={gameStatus !== 'playing' || conditionGameState !== 'selecting' || selectedCount === 0}
+                  className="w-full py-3.5 bg-gradient-to-r from-rose-500 to-red-650 hover:from-rose-600 hover:to-red-700 text-white disabled:from-slate-200 disabled:to-slate-350 disabled:text-slate-500 text-sm sm:text-base font-jua rounded-xl shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-b-4 border-red-800 disabled:border-slate-400"
+                >
+                  <Flame className="w-5 h-5 fill-white" />
+                  <span>
+                    {conditionGameState === 'firing'
+                      ? '미사일 포격 진행 중... 🚀'
+                      : `미사일 폭격! (${selectedCount}개 선택됨)`}
+                  </span>
+                </button>
+              </div>
 
               {/* 다른 문제 버튼 (연습 모드 전용) */}
               {currentMode === 'condition_practice' && conditionGameState === 'selecting' && (
@@ -273,22 +297,27 @@ export default function GameControls({
               <span className="text-[11px] font-bold text-teal-800 font-jua">유령의 좌표 입력</span>
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 w-full">
+             <div className="flex items-center justify-center gap-1.5 w-full">
               {/* Giant Left bracket */}
               <span className="text-5xl md:text-6xl text-teal-600/90 font-extrabold select-none tracking-tight font-gaegu">(</span>
               
               {/* Real Text Input */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={handleTextChange}
-                onKeyDown={handleKeyDown}
-                disabled={gameStatus !== 'playing'}
-                placeholder="예: 3, -4"
-                className="text-center w-40 sm:w-52 h-14 bg-white disabled:bg-slate-100 text-teal-950 font-mono text-xl sm:text-2xl font-extrabold border-2 border-teal-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-200 focus:border-teal-500 shadow-inner px-2 tracking-wide placeholder:text-slate-300 transition-all"
-                id="coordinate-shooting-input"
-              />
+              <div className={`relative ${activeTutorialMode === 'sniper' && tutorialStep && tutorialStep > 0 ? 'tutorial-focus-glow rounded-xl mt-6' : ''}`}>
+                {activeTutorialMode === 'sniper' && tutorialStep && tutorialStep > 0 && (
+                  <FocusGuideIndicator text="다음 단계는 여기를 집중하면 된다! 📍" />
+                )}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={handleTextChange}
+                  onKeyDown={handleKeyDown}
+                  disabled={gameStatus !== 'playing'}
+                  placeholder=""
+                  className="text-center w-40 sm:w-52 h-14 bg-white disabled:bg-slate-100 text-teal-950 font-mono text-xl sm:text-2xl font-extrabold border-2 border-teal-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-teal-200 focus:border-teal-500 shadow-inner px-2 tracking-wide placeholder:text-slate-300 transition-all"
+                  id="coordinate-shooting-input"
+                />
+              </div>
 
               {/* Giant Right bracket */}
               <span className="text-5xl md:text-6xl text-teal-600/90 font-extrabold select-none tracking-tight font-gaegu">)</span>
