@@ -26,31 +26,64 @@
   animation: shake 0.4s ease-in-out;
 }
 
-/* Glowing/Beacon highlight effect for interactive guide */
-@keyframes focus-glowing-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8), 0 0 0 0 rgba(245, 158, 11, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 14px rgba(245, 158, 11, 0), 0 0 0 24px rgba(245, 158, 11, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 0 0 0 rgba(245, 158, 11, 0);
-  }
+/* Glowing/Beacon highlight effects for interactive guides matching matching element colors */
+@keyframes glow-amber {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8), 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 14px rgba(245, 158, 11, 0), 0 0 0 24px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0), 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+@keyframes glow-teal {
+  0% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.8), 0 0 0 0 rgba(13, 148, 136, 0.4); }
+  70% { box-shadow: 0 0 0 14px rgba(13, 148, 136, 0), 0 0 0 24px rgba(13, 148, 136, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0), 0 0 0 0 rgba(13, 148, 136, 0); }
+}
+@keyframes glow-rose {
+  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.8), 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  70% { box-shadow: 0 0 0 14px rgba(244, 63, 94, 0), 0 0 0 24px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0), 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+@keyframes glow-emerald {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 14px rgba(16, 185, 129, 0), 0 0 0 24px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-.tutorial-focus-glow {
+.tutorial-focus-glow-amber,
+.tutorial-focus-glow-teal,
+.tutorial-focus-glow-rose,
+.tutorial-focus-glow-emerald {
   position: relative;
 }
 
-.tutorial-focus-glow::after {
+.tutorial-focus-glow-amber::after,
+.tutorial-focus-glow-teal::after,
+.tutorial-focus-glow-rose::after,
+.tutorial-focus-glow-emerald::after {
   content: '';
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  border: 3px solid #f59e0b; /* Amber-500 */
   pointer-events: none;
-  animation: focus-glowing-ring 2s cubic-bezier(0.25, 0, 0, 1) infinite;
   z-index: 10;
+}
+
+.tutorial-focus-glow-amber::after {
+  border: 3px solid #f59e0b;
+  animation: glow-amber 2s cubic-bezier(0.25, 0, 0, 1) infinite;
+}
+
+.tutorial-focus-glow-teal::after {
+  border: 3px solid #0d9488;
+  animation: glow-teal 2s cubic-bezier(0.25, 0, 0, 1) infinite;
+}
+
+.tutorial-focus-glow-rose::after {
+  border: 3px solid #f43f5e;
+  animation: glow-rose 2s cubic-bezier(0.25, 0, 0, 1) infinite;
+}
+
+.tutorial-focus-glow-emerald::after {
+  border: 3px solid #10b981;
+  animation: glow-emerald 2s cubic-bezier(0.25, 0, 0, 1) infinite;
 }
 

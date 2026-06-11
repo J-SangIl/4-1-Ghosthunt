@@ -1046,6 +1046,7 @@ export default function App() {
   const handleConditionTimeout = () => {
     // Force transition to revealed
     setConditionGameState('revealed');
+    setSweeperStepSuccess(false);
     setHitMessage({
       text: "⏱️ 시간 초과! (제한 시간 10초가 지나 작전에 실패하고 체력이 1 깎였습니다!)",
       type: 'warn'
@@ -1130,6 +1131,7 @@ export default function App() {
       }
 
       if (isPerfect) {
+        setSweeperStepSuccess(true);
         setHitMessage({
           text: "🎯 완벽해요! 모든 유령을 처치하고 시민들을 구했습니다! (+1점)",
           type: 'success'
@@ -1146,6 +1148,7 @@ export default function App() {
         }
 
       } else {
+        setSweeperStepSuccess(false);
         let failMessage = "💥 작전 실패! ";
         if (hasMissedGhost && hasInjuredCivilian) {
           failMessage += "유령을 놓쳤고, 무고한 시민까지 공격했습니다!";
@@ -1458,32 +1461,7 @@ export default function App() {
             {/* Right side: Information and operation dashboards (takes 4 columns in lg size) */}
             <div className="lg:col-span-4 flex flex-col gap-4 w-full justify-start">
               
-              {/* Dynamic visual hit message HUD banner alerts inside right column */}
-              {hitMessage && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`p-3 rounded-xl border font-jua text-xs sm:text-sm text-center flex flex-wrap items-center justify-center gap-2 shadow-sm ${
-                    hitMessage.type === 'success' 
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                      : hitMessage.type === 'warn'
-                        ? 'bg-rose-100 border-rose-300 text-rose-800 animate-pulse'
-                        : 'bg-amber-50 border-amber-300 text-amber-800'
-                  }`}
-                >
-                  <span>
-                    {hitMessage.type === 'success' ? '🔮' : hitMessage.type === 'warn' ? '🚨' : '💨'}
-                  </span>
-                  <span className="leading-tight">{hitMessage.text}</span>
-                  
-                  <button 
-                    onClick={() => setHitMessage(null)} 
-                    className="text-xs ml-auto underline text-slate-500 opacity-70 hover:opacity-100"
-                  >
-                    닫기
-                  </button>
-                </motion.div>
-              )}
+
 
               {/* Score states */}
               <ScoreBoard
